@@ -1,0 +1,8 @@
+/* main.css — Entry point do CSS do Trade Indicator */
+
+/* TailwindCSS via CDN — apenas para desenvolvimento */
+/* Em produção, substituir pelo output.css gerado (ver Sprint 8.5) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Design System customizado */
+@import './design_system.css';
