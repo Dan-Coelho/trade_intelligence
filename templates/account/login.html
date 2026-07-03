@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Entrar — Trade Indicator{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ─── Auth Page Layout ─── */
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-8) var(--space-4);
+        background:
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.15) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+            var(--color-bg-primary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Grid de fundo animado */
+    .auth-page::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+        background-size: 60px 60px;
+        pointer-events: none;
+    }
+
+    /* ─── Card de autenticação ─── */
+    .auth-card {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        background: rgba(20, 27, 46, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-12) var(--space-8);
+        box-shadow:
+            0 0 0 1px rgba(59, 130, 246, 0.05),
+            0 25px 50px rgba(0, 0, 0, 0.6),
+            0 0 60px rgba(59, 130, 246, 0.08);
+        animation: fade-in 0.4s ease forwards;
+    }
+
+    /* Linha de destaque topo */
+    .auth-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 1px;
+        background: var(--gradient-accent);
+        border-radius: 9999px;
+        opacity: 0.6;
+    }
+
+    /* ─── Logo / Marca ─── */
+    .auth-logo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-8);
+        text-align: center;
+    }
+
+    .auth-logo-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-glow);
+    }
+
+    .auth-logo-icon svg {
+        width: 28px;
+        height: 28px;
+        color: #fff;
+    }
+
+    .auth-title {
+        font-size: var(--text-2xl);
+        font-weight: 700;
+        color: var(--color-text-primary);
+        letter-spacing: -0.02em;
+    }
+
+    .auth-subtitle {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+        margin-top: var(--space-1);
+    }
+
+    /* ─── Campos de formulário ─── */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+    }
+
+    .form-label {
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--color-text-secondary);
+        letter-spacing: 0.01em;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--color-text-muted);
+        width: 18px;
+        height: 18px;
+        pointer-events: none;
+        transition: color var(--transition-fast);
+    }
+
+    .form-input {
+        width: 100%;
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 12px 14px 12px 42px;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--color-text-primary);
+        outline: none;
+        transition:
+            border-color var(--transition-fast),
+            box-shadow var(--transition-fast),
+            background var(--transition-fast);
+    }
+
+    .form-input::placeholder {
+        color: var(--color-text-muted);
+    }
+
+    .form-input:focus {
+        border-color: var(--color-accent-primary);
+        background: rgba(26, 34, 54, 0.9);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    }
+
+    .form-input:focus + .input-icon,
+    .input-wrapper:focus-within .input-icon {
+        color: var(--color-accent-primary);
+    }
+
+    /* Ajuste do ícone à esquerda do input (coloca ícone depois no DOM, mas usa z-index) */
+    .input-wrapper .form-input {
+        z-index: 1;
+        position: relative;
+    }
+
+    /* ─── Erro de campo ─── */
+    .field-errors {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .field-errors li {
+        font-size: var(--text-xs);
+        color: var(--color-bearish);
+        padding: 4px 8px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: var(--radius-sm);
+        border-left: 2px solid var(--color-bearish);
+    }
+
+    /* ─── Erro global ─── */
+    .form-errors-global {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3) var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+
+    .form-errors-global p {
+        font-size: var(--text-sm);
+        color: var(--color-bearish);
+    }
+
+    /* ─── Row de opções (lembrar / esqueci) ─── */
+    .form-options-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-6);
+    }
+
+    .remember-me {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        cursor: pointer;
+    }
+
+    .remember-me input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-accent-primary);
+        cursor: pointer;
+    }
+
+    .remember-me span {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    /* ─── Links ─── */
+    .link-accent {
+        font-size: var(--text-sm);
+        color: var(--color-accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color var(--transition-fast);
+    }
+
+    .link-accent:hover {
+        color: var(--color-accent-secondary);
+        text-decoration: underline;
+    }
+
+    /* ─── Botão primário ─── */
+    .btn-primary {
+        width: 100%;
+        padding: 13px var(--space-6);
+        background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-lg);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition:
+            opacity var(--transition-fast),
+            transform var(--transition-fast),
+            box-shadow var(--transition-fast);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+        opacity: 0;
+        transition: opacity var(--transition-fast);
+    }
+
+    .btn-primary:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 25px rgba(59, 130, 246, 0.45);
+    }
+
+    .btn-primary:hover::after {
+        opacity: 1;
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    /* ─── Divisor ─── */
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        margin: var(--space-6) 0;
+    }
+
+    .divider-line {
+        flex: 1;
+        height: 1px;
+        background: var(--color-border);
+    }
+
+    .divider-text {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    /* ─── Footer do card ─── */
+    .auth-footer {
+        text-align: center;
+        margin-top: var(--space-6);
+    }
+
+    .auth-footer p {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    /* ─── Mensagens de sucesso/info (Django messages) ─── */
+    .messages-container {
+        margin-bottom: var(--space-4);
+    }
+
+    .message-item {
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+        margin-bottom: var(--space-2);
+    }
+
+    .message-item.success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: var(--color-bullish);
+    }
+
+    .message-item.error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: var(--color-bearish);
+    }
+
+    .message-item.info {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: var(--color-text-accent);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-page" aria-label="Página de login">
+
+    <!-- ─── Card de Login ─── -->
+    <div class="auth-card" role="main">
+
+        <!-- Logo -->
+        <div class="auth-logo">
+            <div class="auth-logo-icon" aria-hidden="true">
+                <!-- Ícone de gráfico de linhas -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                    <polyline points="16 7 22 7 22 13" />
+                </svg>
+            </div>
+            <h1 class="auth-title">Bem-vindo de volta</h1>
+            <p class="auth-subtitle">Entre na sua conta para continuar</p>
+        </div>
+
+        <!-- Mensagens Django -->
+        {% if messages %}
+        <div class="messages-container" role="status" aria-live="polite">
+            {% for message in messages %}
+            <div class="message-item {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Erros não relacionados a campos específicos -->
+        {% if form.non_field_errors %}
+        <div class="form-errors-global" role="alert" aria-live="assertive">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Formulário de Login -->
+        <form id="login-form" method="POST" action="{% url 'account_login' %}" novalidate>
+            {% csrf_token %}
+
+            <!-- Campo E-mail -->
+            <div class="form-group">
+                <label class="form-label" for="id_login">E-mail</label>
+                <div class="input-wrapper">
+                    <input
+                        type="email"
+                        id="id_login"
+                        name="login"
+                        class="form-input"
+                        placeholder="seu@email.com"
+                        value="{{ form.login.value|default:'' }}"
+                        autocomplete="email"
+                        required
+                        aria-required="true"
+                        {% if form.login.errors %}aria-invalid="true" aria-describedby="login-errors"{% endif %}
+                    />
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                </div>
+                {% if form.login.errors %}
+                <ul class="field-errors" id="login-errors" role="alert">
+                    {% for error in form.login.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Campo Senha -->
+            <div class="form-group">
+                <label class="form-label" for="id_password">Senha</label>
+                <div class="input-wrapper">
+                    <input
+                        type="password"
+                        id="id_password"
+                        name="password"
+                        class="form-input"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                        aria-required="true"
+                        {% if form.password.errors %}aria-invalid="true" aria-describedby="password-errors"{% endif %}
+                    />
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                {% if form.password.errors %}
+                <ul class="field-errors" id="password-errors" role="alert">
+                    {% for error in form.password.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Lembrar-me / Esqueci a senha -->
+            <div class="form-options-row">
+                <label class="remember-me" for="id_remember">
+                    <input
+                        type="checkbox"
+                        id="id_remember"
+                        name="remember"
+                        {% if form.remember.value %}checked{% endif %}
+                    />
+                    <span>Lembrar-me</span>
+                </label>
+                <a href="{% url 'account_reset_password' %}" class="link-accent" id="forgot-password-link">
+                    Esqueci minha senha
+                </a>
+            </div>
+
+            <!-- Botão Entrar -->
+            <button type="submit" id="login-submit-btn" class="btn-primary" aria-label="Entrar na conta">
+                Entrar
+            </button>
+        </form>
+
+        <!-- Divisor -->
+        <div class="divider" aria-hidden="true">
+            <div class="divider-line"></div>
+            <span class="divider-text">ou</span>
+            <div class="divider-line"></div>
+        </div>
+
+        <!-- Link para cadastro -->
+        <div class="auth-footer">
+            <p>
+                Não tem uma conta?
+                <a href="{% url 'account_signup' %}" class="link-accent" id="signup-link">
+                    Cadastre-se gratuitamente
+                </a>
+            </p>
+        </div>
+
+    </div><!-- /auth-card -->
+
+</section>
+{% endblock %}

@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Criar Conta — Trade Indicator{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ─── Auth Page Layout ─── */
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-8) var(--space-4);
+        background:
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 40% at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+            var(--color-bg-primary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .auth-page::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        pointer-events: none;
+    }
+
+    /* ─── Card ─── */
+    .auth-card {
+        position: relative;
+        width: 100%;
+        max-width: 460px;
+        background: rgba(20, 27, 46, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-12) var(--space-8);
+        box-shadow:
+            0 0 0 1px rgba(6, 182, 212, 0.05),
+            0 25px 50px rgba(0, 0, 0, 0.6),
+            0 0 60px rgba(6, 182, 212, 0.06);
+        animation: fade-in 0.4s ease forwards;
+    }
+
+    .auth-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #06B6D4, #3B82F6, transparent);
+        border-radius: 9999px;
+        opacity: 0.7;
+    }
+
+    /* ─── Logo / Marca ─── */
+    .auth-logo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-8);
+        text-align: center;
+    }
+
+    .auth-logo-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-glow-cyan);
+    }
+
+    .auth-logo-icon svg {
+        width: 28px;
+        height: 28px;
+        color: #fff;
+    }
+
+    .auth-title {
+        font-size: var(--text-2xl);
+        font-weight: 700;
+        color: var(--color-text-primary);
+        letter-spacing: -0.02em;
+    }
+
+    .auth-subtitle {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+        margin-top: var(--space-1);
+    }
+
+    /* ─── Form fields ─── */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+    }
+
+    .form-label {
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--color-text-secondary);
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--color-text-muted);
+        width: 18px;
+        height: 18px;
+        pointer-events: none;
+        transition: color var(--transition-fast);
+        z-index: 2;
+    }
+
+    .form-input {
+        width: 100%;
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 12px 14px 12px 42px;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--color-text-primary);
+        outline: none;
+        transition:
+            border-color var(--transition-fast),
+            box-shadow var(--transition-fast),
+            background var(--transition-fast);
+        position: relative;
+        z-index: 1;
+    }
+
+    .form-input::placeholder {
+        color: var(--color-text-muted);
+    }
+
+    .form-input:focus {
+        border-color: var(--color-accent-secondary);
+        background: rgba(26, 34, 54, 0.9);
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.12);
+    }
+
+    .input-wrapper:focus-within .input-icon {
+        color: var(--color-accent-secondary);
+    }
+
+    /* ─── Erros ─── */
+    .field-errors {
+        list-style: none;
+    }
+
+    .field-errors li {
+        font-size: var(--text-xs);
+        color: var(--color-bearish);
+        padding: 4px 8px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: var(--radius-sm);
+        border-left: 2px solid var(--color-bearish);
+        margin-top: 4px;
+    }
+
+    .form-errors-global {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3) var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+
+    .form-errors-global p {
+        font-size: var(--text-sm);
+        color: var(--color-bearish);
+    }
+
+    /* ─── Indicador de força da senha ─── */
+    .password-strength {
+        margin-top: var(--space-2);
+    }
+
+    .strength-bar-wrapper {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+
+    .strength-bar-segment {
+        flex: 1;
+        height: 3px;
+        background: var(--color-border);
+        border-radius: 9999px;
+        transition: background var(--transition-fast);
+    }
+
+    .strength-label {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+    }
+
+    /* ─── Termos e condições ─── */
+    .terms-row {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        margin-bottom: var(--space-6);
+    }
+
+    .terms-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-accent-secondary);
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .terms-row span {
+        font-size: var(--text-xs);
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+    }
+
+    /* ─── Botão primário ─── */
+    .btn-primary {
+        width: 100%;
+        padding: 13px var(--space-6);
+        background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-lg);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition:
+            opacity var(--transition-fast),
+            transform var(--transition-fast),
+            box-shadow var(--transition-fast);
+        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 25px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    /* ─── Benefícios / badges ─── */
+    .benefits-row {
+        display: flex;
+        justify-content: center;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        margin-bottom: var(--space-6);
+    }
+
+    .benefit-badge {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--text-xs);
+        color: var(--color-text-secondary);
+    }
+
+    .benefit-badge svg {
+        width: 14px;
+        height: 14px;
+        color: var(--color-bullish);
+        flex-shrink: 0;
+    }
+
+    /* ─── Links ─── */
+    .link-accent {
+        font-size: var(--text-sm);
+        color: var(--color-accent-secondary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color var(--transition-fast);
+    }
+
+    .link-accent:hover {
+        color: var(--color-accent-primary);
+        text-decoration: underline;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: var(--space-6);
+    }
+
+    .auth-footer p {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-page" aria-label="Página de cadastro">
+
+    <div class="auth-card" role="main">
+
+        <!-- Logo -->
+        <div class="auth-logo">
+            <div class="auth-logo-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+            </div>
+            <h1 class="auth-title">Crie sua conta</h1>
+            <p class="auth-subtitle">Análise de mercado com inteligência artificial</p>
+        </div>
+
+        <!-- Benefícios -->
+        <div class="benefits-row" aria-label="Benefícios da conta">
+            <span class="benefit-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Sinais de IA
+            </span>
+            <span class="benefit-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Análise técnica
+            </span>
+            <span class="benefit-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Backtest
+            </span>
+        </div>
+
+        <!-- Erros globais -->
+        {% if form.non_field_errors %}
+        <div class="form-errors-global" role="alert">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Formulário de Cadastro -->
+        <form id="signup-form" method="POST" action="{% url 'account_signup' %}" novalidate>
+            {% csrf_token %}
+
+            <!-- Campo Nome (se existir no form do allauth) -->
+            {% if form.first_name %}
+            <div class="form-group">
+                <label class="form-label" for="id_first_name">Nome</label>
+                <div class="input-wrapper">
+                    <input
+                        type="text"
+                        id="id_first_name"
+                        name="first_name"
+                        class="form-input"
+                        placeholder="Seu nome"
+                        value="{{ form.first_name.value|default:'' }}"
+                        autocomplete="given-name"
+                        {% if form.first_name.errors %}aria-invalid="true"{% endif %}
+                    />
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                {% if form.first_name.errors %}
+                <ul class="field-errors" role="alert">
+                    {% for error in form.first_name.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Campo E-mail -->
+            <div class="form-group">
+                <label class="form-label" for="id_email">E-mail</label>
+                <div class="input-wrapper">
+                    <input
+                        type="email"
+                        id="id_email"
+                        name="email"
+                        class="form-input"
+                        placeholder="seu@email.com"
+                        value="{{ form.email.value|default:'' }}"
+                        autocomplete="email"
+                        required
+                        aria-required="true"
+                        {% if form.email.errors %}aria-invalid="true" aria-describedby="email-errors"{% endif %}
+                    />
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                </div>
+                {% if form.email.errors %}
+                <ul class="field-errors" id="email-errors" role="alert">
+                    {% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Campo Senha -->
+            <div class="form-group">
+                <label class="form-label" for="id_password1">Senha</label>
+                <div class="input-wrapper">
+                    <input
+                        type="password"
+                        id="id_password1"
+                        name="password1"
+                        class="form-input"
+                        placeholder="Mínimo 8 caracteres"
+                        autocomplete="new-password"
+                        required
+                        aria-required="true"
+                        {% if form.password1.errors %}aria-invalid="true" aria-describedby="password1-errors"{% endif %}
+                    />
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <!-- Barra de força da senha -->
+                <div class="password-strength" aria-hidden="true" id="password-strength-indicator">
+                    <div class="strength-bar-wrapper">
+                        <div class="strength-bar-segment" id="strength-seg-1"></div>
+                        <div class="strength-bar-segment" id="strength-seg-2"></div>
+                        <div class="strength-bar-segment" id="strength-seg-3"></div>
+                        <div class="strength-bar-segment" id="strength-seg-4"></div>
+                    </div>
+                    <span class="strength-label" id="strength-label">Digite uma senha segura</span>
+                </div>
+                {% if form.password1.errors %}
+                <ul class="field-errors" id="password1-errors" role="alert">
+                    {% for error in form.password1.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Campo Confirmação de Senha -->
+            <div class="form-group">
+                <label class="form-label" for="id_password2">Confirmar senha</label>
+                <div class="input-wrapper">
+                    <input
+                        type="password"
+                        id="id_password2"
+                        name="password2"
+                        class="form-input"
+                        placeholder="Repita a senha"
+                        autocomplete="new-password"
+                        required
+                        aria-required="true"
+                        {% if form.password2.errors %}aria-invalid="true" aria-describedby="password2-errors"{% endif %}
+                    />
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                {% if form.password2.errors %}
+                <ul class="field-errors" id="password2-errors" role="alert">
+                    {% for error in form.password2.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Botão Criar conta -->
+            <button type="submit" id="signup-submit-btn" class="btn-primary" aria-label="Criar conta gratuitamente">
+                Criar conta gratuitamente
+            </button>
+        </form>
+
+        <!-- Footer do card -->
+        <div class="auth-footer">
+            <p>
+                Já tem uma conta?
+                <a href="{% url 'account_login' %}" class="link-accent" id="login-link">
+                    Entrar
+                </a>
+            </p>
+        </div>
+
+    </div><!-- /auth-card -->
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /* Indicador de força da senha (lado cliente, sem dados sensíveis no servidor) */
+    (function () {
+        const pwInput = document.getElementById('id_password1');
+        const segments = [
+            document.getElementById('strength-seg-1'),
+            document.getElementById('strength-seg-2'),
+            document.getElementById('strength-seg-3'),
+            document.getElementById('strength-seg-4'),
+        ];
+        const label = document.getElementById('strength-label');
+
+        const colors = ['#EF4444', '#F59E0B', '#3B82F6', '#10B981'];
+        const labels = ['Muito fraca', 'Fraca', 'Boa', 'Forte'];
+
+        function calcStrength(pw) {
+            let score = 0;
+            if (pw.length >= 8)  score++;
+            if (/[A-Z]/.test(pw)) score++;
+            if (/[0-9]/.test(pw)) score++;
+            if (/[^A-Za-z0-9]/.test(pw)) score++;
+            return score;
+        }
+
+        function resetBars() {
+            segments.forEach(s => { s.style.background = 'var(--color-border)'; });
+            label.textContent = '';
+        }
+
+        if (pwInput) {
+            pwInput.addEventListener('input', function () {
+                const val = this.value;
+                if (!val) { resetBars(); return; }
+                const score = calcStrength(val);
+                segments.forEach((s, i) => {
+                    s.style.background = i < score ? colors[score - 1] : 'var(--color-border)';
+                });
+                label.textContent = labels[score - 1] || '';
+                label.style.color = colors[score - 1] || 'var(--color-text-muted)';
+            });
+        }
+    })();
+</script>
+{% endblock %}

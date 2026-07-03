@@ -32,49 +32,49 @@
   - [x] 0.3.4 Criar `static/js/htmx.min.js` e `static/js/alpine.min.js` (download local)
   - [x] 0.3.5 Criar diretório `templates/` na raiz e configurar `TEMPLATES[0]['DIRS']`
 
-- [ ] **0.4 — Template Base**
-  - [ ] 0.4.1 Criar `templates/base.html` com: `<head>` com meta charset/viewport, link para Inter (Google Fonts), TailwindCSS CDN, Alpine.js, HTMX; `<body class="bg-[#0A0E1A] text-gray-50 font-sans">`; blocks: `title`, `extra_head`, `content`, `extra_js`
-  - [ ] 0.4.2 Criar `templates/partials/navbar.html` com logo, busca, links de autenticação
-  - [ ] 0.4.3 Criar `templates/partials/footer.html` com rodapé informativo simples
+- [x] **0.4 — Template Base**
+  - [x] 0.4.1 Criar `templates/base.html` com: `<head>` com meta charset/viewport, link para Inter (Google Fonts), TailwindCSS CDN, Alpine.js, HTMX; `<body class="bg-[#0A0E1A] text-gray-50 font-sans">`; blocks: `title`, `extra_head`, `content`, `extra_js`
+  - [x] 0.4.2 Criar `templates/partials/navbar.html` com logo, busca, links de autenticação
+  - [x] 0.4.3 Criar `templates/partials/footer.html` com rodapé informativo simples
 
 ---
 
 ### 🏃 Sprint 1 — Autenticação e Landing Page
 
-- [ ] **1.1 — Configuração do Django Allauth**
-  - [ ] 1.1.1 Instalar e configurar `django-allauth` no `settings.py` (AUTHENTICATION_BACKENDS, INSTALLED_APPS, SITE_ID)
-  - [ ] 1.1.2 Adicionar `path('accounts/', include('allauth.urls'))` no `urls.py` raiz
-  - [ ] 1.1.3 Configurar `LOGIN_REDIRECT_URL = '/dashboard/'` e `LOGOUT_REDIRECT_URL = '/'`
-  - [ ] 1.1.4 Configurar `ACCOUNT_EMAIL_REQUIRED = True`, `ACCOUNT_USERNAME_REQUIRED = False`, `ACCOUNT_AUTHENTICATION_METHOD = 'email'`
+- [x] **1.1 — Configuração do Django Allauth**
+  - [x] 1.1.1 Instalar e configurar `django-allauth` no `settings.py` (AUTHENTICATION_BACKENDS, INSTALLED_APPS, SITE_ID)
+  - [x] 1.1.2 Adicionar `path('accounts/', include('allauth.urls'))` no `urls.py` raiz
+  - [x] 1.1.3 Configurar `LOGIN_REDIRECT_URL = '/dashboard/'` e `LOGOUT_REDIRECT_URL = '/'`
+  - [x] 1.1.4 Configurar `ACCOUNT_EMAIL_REQUIRED = True`, `ACCOUNT_USERNAME_REQUIRED = False`, `ACCOUNT_AUTHENTICATION_METHOD = 'email'`
 
-- [ ] **1.2 — Templates de Autenticação**
-  - [ ] 1.2.1 Criar `templates/account/login.html` — formulário de login com design dark mode, campos e-mail e senha, botão "Entrar", link "Esqueci minha senha" e link "Cadastre-se"
-  - [ ] 1.2.2 Criar `templates/account/signup.html` — formulário de cadastro com campos nome, e-mail, senha, confirmação de senha, botão "Criar conta"
-  - [ ] 1.2.3 Criar `templates/account/password_reset.html` — formulário de recuperação de senha
-  - [ ] 1.2.4 Criar `templates/account/email_confirm.html` — página de confirmação de e-mail
-  - [ ] 1.2.5 Aplicar design system (dark mode, paleta azul/ciano, Inter) em todos os templates de auth
+- [x] **1.2 — Templates de Autenticação**
+  - [x] 1.2.1 Criar `templates/account/login.html` — formulário de login com design dark mode, campos e-mail e senha, botão "Entrar", link "Esqueci minha senha" e link "Cadastre-se"
+  - [x] 1.2.2 Criar `templates/account/signup.html` — formulário de cadastro com campos nome, e-mail, senha, confirmação de senha, botão "Criar conta"
+  - [x] 1.2.3 Criar `templates/account/password_reset.html` — formulário de recuperação de senha
+  - [x] 1.2.4 Criar `templates/account/email_confirm.html` — página de confirmação de e-mail
+  - [x] 1.2.5 Aplicar design system (dark mode, paleta azul/ciano, Inter) em todos os templates de auth
 
-- [ ] **1.3 — Landing Page Pública**
-  - [ ] 1.3.1 Criar CBV `LandingPageView(TemplateView)` em `core/views.py`
-  - [ ] 1.3.2 Adicionar lógica de redirecionamento: se `request.user.is_authenticated`, redirecionar para `/dashboard/`
-  - [ ] 1.3.3 Registrar URL `path('', LandingPageView.as_view(), name='landing')` em `core/urls.py`
-  - [ ] 1.3.4 Incluir `core/urls.py` no `urls.py` raiz
-  - [ ] 1.3.5 Criar `templates/core/landing.html` — seções: Hero com headline, sub-headline, CTAs "Cadastre-se" e "Login"; Features (3 cards de funcionalidade); Footer
-  - [ ] 1.3.6 Estilizar `landing.html` com gradiente de fundo `from-[#0A0E1A] via-[#1E3A5F] to-[#0A0E1A]`, animações CSS sutis, design premium
+- [x] **1.3 — Landing Page Pública**
+  - [x] 1.3.1 Criar CBV `LandingPageView(TemplateView)` em `core_app/views.py`
+  - [x] 1.3.2 Adicionar lógica de redirecionamento: se `request.user.is_authenticated`, redirecionar para `/dashboard/`
+  - [x] 1.3.3 Registrar URL `path('', LandingPageView.as_view(), name='landing')` em `core_app/urls.py`
+  - [x] 1.3.4 Incluir `core_app/urls.py` no `urls.py` raiz
+  - [x] 1.3.5 Criar `templates/core_app/landing.html` — seções: Hero com headline, sub-headline, CTAs "Cadastre-se" e "Login"; Features (3 cards de funcionalidade); Footer
+  - [x] 1.3.6 Estilizar `landing.html` com gradiente de fundo `from-[#0A0E1A] via-[#1E3A5F] to-[#0A0E1A]`, animações CSS sutis, design premium
 
-- [ ] **1.4 — Middleware de Autenticação**
-  - [ ] 1.4.1 Configurar `LoginRequiredMixin` como mixin padrão para todas as CBVs do dashboard (será aplicado nas sprints seguintes)
-  - [ ] 1.4.2 Testar manualmente: acesso a `/dashboard/` sem login redireciona para `/accounts/login/`
+- [x] **1.4 — Middleware de Autenticação**
+  - [x] 1.4.1 Configurar `LoginRequiredMixin` como mixin padrão para todas as CBVs do dashboard (será aplicado nas sprints seguintes)
+  - [x] 1.4.2 Testar manualmente: acesso a `/dashboard/` sem login redireciona para `/accounts/login/`
 
 ---
 
 ### 🏃 Sprint 2 — Models de Dados Core
 
-- [ ] **2.1 — App `market_data` — Models**
-  - [ ] 2.1.1 Criar `market_data/models.py` com model `Asset`: campos `ticker (CharField, unique)`, `name (CharField)`, `asset_type (CharField, choices: FUTURE/STOCK)`, `exchange (CharField, default='B3')`, `created_at`, `updated_at`
-  - [ ] 2.1.2 Criar model `OHLCCandle` em `market_data/models.py`: FK para `Asset`, campos `timeframe (CharField)`, `timestamp (DateTimeField, db_index=True)`, `open/high/low/close (DecimalField)`, `volume (BigIntegerField)`, `created_at`, `updated_at`; `Meta: unique_together = [('asset', 'timestamp', 'timeframe')]`
-  - [ ] 2.1.3 Criar `market_data/admin.py` registrando `Asset` e `OHLCCandle` com `list_display` e `list_filter` apropriados
-  - [ ] 2.1.4 Gerar e aplicar migrations: `makemigrations market_data && migrate`
+- [x] **2.1 — App `market_data` — Models**
+  - [x] 2.1.1 Criar `market_data/models.py` com model `Asset`: campos `ticker (CharField, unique)`, `name (CharField)`, `asset_type (CharField, choices: FUTURE/STOCK)`, `exchange (CharField, default='B3')`, `created_at`, `updated_at`
+  - [x] 2.1.2 Criar model `OHLCCandle` em `market_data/models.py`: FK para `Asset`, campos `timeframe (CharField)`, `timestamp (DateTimeField, db_index=True)`, `open/high/low/close (DecimalField)`, `volume (BigIntegerField)`, `created_at`, `updated_at`; `Meta: unique_together = [('asset', 'timestamp', 'timeframe')]`
+  - [x] 2.1.3 Criar `market_data/admin.py` registrando `Asset` e `OHLCCandle` com `list_display` e `list_filter` apropriados
+  - [x] 2.1.4 Gerar e aplicar migrations: `makemigrations market_data && migrate`
 
 - [ ] **2.2 — App `analysis` — Models**
   - [ ] 2.2.1 Criar `analysis/models.py` com model `TechnicalIndicator`: FK para `Asset`, campos `indicator_name (CharField)`, `timeframe (CharField)`, `timestamp (DateTimeField)`, `values (JSONField)`, `created_at`, `updated_at`

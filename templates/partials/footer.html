@@ -1,0 +1,134 @@
+{% load static %}
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FOOTER — Trade Indicator
+     ═══════════════════════════════════════════════════════════════════════ -->
+<footer id="main-footer" class="border-t border-gray-800/60 bg-[#0A0E1A]">
+
+    <!-- ── CONTEÚDO PRINCIPAL DO FOOTER ── -->
+    <div class="mx-auto max-w-screen-2xl px-4 py-10 lg:px-6">
+        <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+
+            <!-- Coluna 1 — Brand -->
+            <div class="space-y-4">
+                <a href="/" id="footer-logo" class="inline-flex items-center gap-2.5 group">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 shadow-glow">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                            <polyline points="16 7 22 7 22 13"/>
+                        </svg>
+                    </span>
+                    <span class="text-sm font-bold tracking-tight text-white">
+                        Trade<span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Indicator</span>
+                    </span>
+                </a>
+
+                <p class="max-w-xs text-sm leading-relaxed text-gray-500">
+                    Análise técnica, fundamentalista e sinais gerados por IA para o mercado financeiro brasileiro.
+                </p>
+
+                <!-- Badges de status -->
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+                        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
+                        Sistema Online
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400">
+                        B3 &amp; Derivativos
+                    </span>
+                </div>
+            </div>
+
+            <!-- Coluna 2 — Recursos -->
+            <div class="space-y-4">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400">Recursos</h3>
+                <nav aria-label="Links de recursos" class="space-y-2.5">
+                    <a href="#dashboard" id="footer-link-dashboard" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Dashboard
+                    </a>
+                    <a href="#analise" id="footer-link-analysis" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Análise Técnica
+                    </a>
+                    <a href="#ia" id="footer-link-ai" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                        Sinais de IA
+                    </a>
+                    <a href="#backtest" id="footer-link-backtest" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+                        Backtesting
+                    </a>
+                    <a href="#risco" id="footer-link-risk" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Gestão de Risco
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Coluna 3 — Mercados -->
+            <div class="space-y-4">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400">Mercados</h3>
+                <nav aria-label="Links de mercados" class="space-y-2.5">
+                    <a href="#acoes" id="footer-link-stocks" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Ações B3
+                    </a>
+                    <a href="#futuros" id="footer-link-futures" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                        Mini Contratos (WIN/WDO)
+                    </a>
+                    <a href="#fundamentalistas" id="footer-link-fundamentals" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Dados Fundamentalistas
+                    </a>
+                    <a href="#macro" id="footer-link-macro" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        Indicadores Macro (SELIC/IPCA)
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Coluna 4 — Legal / Info -->
+            <div class="space-y-4">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400">Informações</h3>
+                <nav aria-label="Links legais e informativos" class="space-y-2.5">
+                    <a href="#sobre" id="footer-link-about" class="text-sm text-gray-500 transition-colors hover:text-white">Sobre o Projeto</a>
+                    <a href="#privacidade" id="footer-link-privacy" class="text-sm text-gray-500 transition-colors hover:text-white">Política de Privacidade</a>
+                    <a href="#termos" id="footer-link-terms" class="text-sm text-gray-500 transition-colors hover:text-white">Termos de Uso</a>
+                </nav>
+
+                <!-- Aviso legal -->
+                <div class="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                    <p class="text-xs leading-relaxed text-amber-400/80">
+                        <strong class="text-amber-400">⚠ Aviso:</strong> Este sistema é para fins educacionais e informativos. Não constitui recomendação de investimento. Invista com responsabilidade.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RODAPÉ INFERIOR ── -->
+    <div class="border-t border-gray-800/40">
+        <div class="mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row lg:px-6">
+
+            <p class="text-xs text-gray-600">
+                &copy; {% now "Y" %} TradeIndicator. Desenvolvido com Django &amp; IA.
+            </p>
+
+            <!-- Indicadores de tecnologia -->
+            <div class="flex items-center gap-3 text-xs text-gray-700">
+                <span class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.998 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.207 11.385.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12.002-12z"/></svg>
+                    Django 5.x
+                </span>
+                <span class="text-gray-800">·</span>
+                <span>Python 3.12</span>
+                <span class="text-gray-800">·</span>
+                <span>LangGraph IA</span>
+                <span class="text-gray-800">·</span>
+                <span>B3 Market Data</span>
+            </div>
+        </div>
+    </div>
+</footer>
