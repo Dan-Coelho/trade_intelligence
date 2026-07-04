@@ -76,36 +76,36 @@
   - [x] 2.1.3 Criar `market_data/admin.py` registrando `Asset` e `OHLCCandle` com `list_display` e `list_filter` apropriados
   - [x] 2.1.4 Gerar e aplicar migrations: `makemigrations market_data && migrate`
 
-- [ ] **2.2 — App `analysis` — Models**
-  - [ ] 2.2.1 Criar `analysis/models.py` com model `TechnicalIndicator`: FK para `Asset`, campos `indicator_name (CharField)`, `timeframe (CharField)`, `timestamp (DateTimeField)`, `values (JSONField)`, `created_at`, `updated_at`
-  - [ ] 2.2.2 Criar model `CandlestickPattern` em `analysis/models.py`: FK para `Asset`, campos `pattern_name (CharField)`, `timeframe (CharField)`, `timestamp (DateTimeField)`, `direction (CharField, choices: BULLISH/BEARISH/NEUTRAL)`, `confidence (DecimalField)`, `created_at`, `updated_at`
-  - [ ] 2.2.3 Gerar e aplicar migrations: `makemigrations analysis && migrate`
+- [x] **2.2 — App `analysis` — Models**
+  - [x] 2.2.1 Criar `analysis/models.py` com model `TechnicalIndicator`: FK para `Asset`, campos `indicator_name (CharField)`, `timeframe (CharField)`, `timestamp (DateTimeField)`, `values (JSONField)`, `created_at`, `updated_at`
+  - [x] 2.2.2 Criar model `CandlestickPattern` em `analysis/models.py`: FK para `Asset`, campos `pattern_name (CharField)`, `timeframe (CharField)`, `timestamp (DateTimeField)`, `direction (CharField, choices: BULLISH/BEARISH/NEUTRAL)`, `confidence (DecimalField)`, `created_at`, `updated_at`
+  - [x] 2.2.3 Gerar e aplicar migrations: `makemigrations analysis && migrate`
 
-- [ ] **2.3 — App `fundamentals` — Models**
-  - [ ] 2.3.1 Criar `fundamentals/models.py` com model `FundamentalData`: FK para `Asset`, campos `reference_date (DateField)`, `pl_ratio (DecimalField, null=True)`, `roe (DecimalField, null=True)`, `dividend_yield (DecimalField, null=True)`, `ev_ebitda (DecimalField, null=True)`, `raw_data (JSONField, default=dict)`, `created_at`, `updated_at`
-  - [ ] 2.3.2 Gerar e aplicar migrations
+- [x] **2.3 — App `fundamentals` — Models**
+  - [x] 2.3.1 Criar `fundamentals/models.py` com model `FundamentalData`: FK para `Asset`, campos `reference_date (DateField)`, `pl_ratio (DecimalField, null=True)`, `roe (DecimalField, null=True)`, `dividend_yield (DecimalField, null=True)`, `ev_ebitda (DecimalField, null=True)`, `raw_data (JSONField, default=dict)`, `created_at`, `updated_at`
+  - [x] 2.3.2 Gerar e aplicar migrations
 
-- [ ] **2.4 — App `news` — Models**
-  - [ ] 2.4.1 Criar `news/models.py` com model `NewsArticle`: FK para `Asset (null=True)`, campos `title (CharField)`, `body (TextField)`, `source_url (URLField)`, `source_name (CharField)`, `sentiment (CharField, choices: BULLISH/BEARISH/NEUTRAL)`, `sentiment_score (DecimalField, null=True)`, `published_at (DateTimeField)`, `created_at`, `updated_at`
-  - [ ] 2.4.2 Gerar e aplicar migrations
+- [x] **2.4 — App `news` — Models**
+  - [x] 2.4.1 Criar `news/models.py` com model `NewsArticle`: FK para `Asset (null=True)`, campos `title (CharField)`, `body (TextField)`, `source_url (URLField)`, `source_name (CharField)`, `sentiment (CharField, choices: BULLISH/BEARISH/NEUTRAL)`, `sentiment_score (DecimalField, null=True)`, `published_at (DateTimeField)`, `created_at`, `updated_at`
+  - [x] 2.4.2 Gerar e aplicar migrations
 
-- [ ] **2.5 — App `ai_agents` — Models**
-  - [ ] 2.5.1 Criar `ai_agents/models.py` com model `AISignal`: FK para `Asset`, campos `signal_type (CharField, choices: BULLISH/BEARISH/NEUTRAL)`, `confidence_pct (DecimalField)`, `technical_justification (TextField)`, `fundamental_justification (TextField, blank=True)`, `macro_justification (TextField)`, `synthesis_text (TextField)`, `timeframe (CharField)`, `generated_at (DateTimeField)`, `created_at`, `updated_at`
-  - [ ] 2.5.2 Gerar e aplicar migrations
+- [x] **2.5 — App `ai_agents` — Models**
+  - [x] 2.5.1 Criar `ai_agents/models.py` com model `AISignal`: FK para `Asset`, campos `signal_type (CharField, choices: BULLISH/BEARISH/NEUTRAL)`, `confidence_pct (DecimalField)`, `technical_justification (TextField)`, `fundamental_justification (TextField, blank=True)`, `macro_justification (TextField)`, `synthesis_text (TextField)`, `timeframe (CharField)`, `generated_at (DateTimeField)`, `created_at`, `updated_at`
+  - [x] 2.5.2 Gerar e aplicar migrations
 
-- [ ] **2.6 — App `backtest` — Models**
-  - [ ] 2.6.1 Criar `backtest/models.py` com model `BacktestResult`: FK para `user (AUTH_USER)`, FK para `asset`, campos `strategy_name (CharField)`, `start_date (DateField)`, `end_date (DateField)`, `initial_capital (DecimalField)`, `final_capital (DecimalField)`, `win_rate (DecimalField)`, `sharpe_ratio (DecimalField)`, `max_drawdown (DecimalField)`, `trades_log (JSONField, default=list)`, `created_at`, `updated_at`
-  - [ ] 2.6.2 Gerar e aplicar migrations
+- [x] **2.6 — App `backtest` — Models**
+  - [x] 2.6.1 Criar `backtest/models.py` com model `BacktestResult`: FK para `user (AUTH_USER)`, FK para `asset`, campos `strategy_name (CharField)`, `start_date (DateField)`, `end_date (DateField)`, `initial_capital (DecimalField)`, `final_capital (DecimalField)`, `win_rate (DecimalField)`, `sharpe_ratio (DecimalField)`, `max_drawdown (DecimalField)`, `trades_log (JSONField, default=list)`, `created_at`, `updated_at`
+  - [x] 2.6.2 Gerar e aplicar migrations
 
-- [ ] **2.7 — App `watchlist` — Models**
-  - [ ] 2.7.1 Criar `watchlist/models.py` com model `Watchlist`: FK para `user`, FK para `asset`, campo `display_order (IntegerField, default=0)`, `created_at`, `updated_at`; `Meta: unique_together = [('user', 'asset')]`
-  - [ ] 2.7.2 Criar model `PriceAlert`: FK para `user`, FK para `asset`, campos `condition (CharField, choices: ABOVE/BELOW)`, `target_price (DecimalField)`, `is_active (BooleanField, default=True)`, `is_triggered (BooleanField, default=False)`, `triggered_at (DateTimeField, null=True)`, `created_at`, `updated_at`
-  - [ ] 2.7.3 Gerar e aplicar migrations
+- [x] **2.7 — App `watchlist` — Models**
+  - [x] 2.7.1 Criar `watchlist/models.py` com model `Watchlist`: FK para `user`, FK para `asset`, campo `display_order (IntegerField, default=0)`, `created_at`, `updated_at`; `Meta: unique_together = [('user', 'asset')]`
+  - [x] 2.7.2 Criar model `PriceAlert`: FK para `user`, FK para `asset`, campos `condition (CharField, choices: ABOVE/BELOW)`, `target_price (DecimalField)`, `is_active (BooleanField, default=True)`, `is_triggered (BooleanField, default=False)`, `triggered_at (DateTimeField, null=True)`, `created_at`, `updated_at`
+  - [x] 2.7.3 Gerar e aplicar migrations
 
-- [ ] **2.8 — App `risk` — Models**
-  - [ ] 2.8.1 Criar `risk/models.py` com model `RiskCalculation`: FK para `user`, FK para `asset`, campos `atr_value (DecimalField)`, `suggested_stop_loss (DecimalField)`, `user_capital (DecimalField)`, `position_size (DecimalField)`, `kelly_fraction (DecimalField)`, `created_at`, `updated_at`
-  - [ ] 2.8.2 Criar model `MacroIndicator` em `news/models.py` (ou app próprio): campos `name (CharField)`, `source (CharField)`, `reference_date (DateField)`, `value (DecimalField)`, `unit (CharField)`, `created_at`, `updated_at`
-  - [ ] 2.8.3 Gerar e aplicar migrations
+- [x] **2.8 — App `risk` — Models**
+  - [x] 2.8.1 Criar `risk/models.py` com model `RiskCalculation`: FK para `user`, FK para `asset`, campos `atr_value (DecimalField)`, `suggested_stop_loss (DecimalField)`, `user_capital (DecimalField)`, `position_size (DecimalField)`, `kelly_fraction (DecimalField)`, `created_at`, `updated_at`
+  - [x] 2.8.2 Criar model `MacroIndicator` em `news/models.py` (ou app próprio): campos `name (CharField)`, `source (CharField)`, `reference_date (DateField)`, `value (DecimalField)`, `unit (CharField)`, `created_at`, `updated_at`
+  - [x] 2.8.3 Gerar e aplicar migrations
 
 ---
 
