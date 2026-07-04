@@ -111,34 +111,34 @@
 
 ### 🏃 Sprint 3 — Dashboard Principal (UI Shell)
 
-- [ ] **3.1 — App `dashboard` — Views e URLs**
-  - [ ] 3.1.1 Criar `dashboard/views.py` com CBV `DashboardView(LoginRequiredMixin, TemplateView)`: `template_name = 'dashboard/index.html'`; context com watchlist do usuário logado
-  - [ ] 3.1.2 Criar `dashboard/urls.py` com `path('', DashboardView.as_view(), name='dashboard')`
-  - [ ] 3.1.3 Incluir `path('dashboard/', include('dashboard.urls'))` no `urls.py` raiz
+- [x] **3.1 — App `dashboard` — Views e URLs**
+  - [x] 3.1.1 Criar `dashboard/views.py` com CBV `DashboardView(LoginRequiredMixin, TemplateView)`: `template_name = 'dashboard/index.html'`; context com watchlist do usuário logado
+  - [x] 3.1.2 Criar `dashboard/urls.py` com `path('', DashboardView.as_view(), name='dashboard')`
+  - [x] 3.1.3 Incluir `path('dashboard/', include('dashboard.urls'))` no `urls.py` raiz
 
-- [ ] **3.2 — Template do Dashboard**
-  - [ ] 3.2.1 Criar `templates/dashboard/index.html` extendendo `base.html`
-  - [ ] 3.2.2 Implementar header do dashboard: logo, campo de busca de ticker (HTMX `hx-get` para `/market_data/search/`), links "Watchlist", "Alertas", avatar do usuário com dropdown
-  - [ ] 3.2.3 Implementar grid principal: `grid grid-cols-1 lg:grid-cols-12 gap-4`
-  - [ ] 3.2.4 Implementar painel do gráfico (`lg:col-span-8`): container para TradingView Lightweight Charts com `id="chart-container"`, seletor de timeframe (1m, 5m, 15m, 1h, 1D)
-  - [ ] 3.2.5 Implementar painel lateral (`lg:col-span-4`): card "Sinal IA" com placeholder (spinner animado), card "Dados Fundamentalistas" (condicional via Alpine.js `x-show`), card "Gestão de Risco"
-  - [ ] 3.2.6 Implementar rodapé fixo: ticker de indicadores macro (SELIC, IPCA, USD/BRL) e feed de notícias horizontalmente rolável
-  - [ ] 3.2.7 Criar `templates/dashboard/partials/signal_card.html` — partial HTMX para o card de sinal IA
-  - [ ] 3.2.8 Criar `templates/dashboard/partials/fundamental_card.html` — partial para dados fundamentalistas
-  - [ ] 3.2.9 Criar `templates/dashboard/partials/risk_card.html` — partial para gestão de risco
-  - [ ] 3.2.10 Criar `templates/dashboard/partials/watchlist_sidebar.html` — partial para sidebar de watchlist
+- [x] **3.2 — Template do Dashboard**
+  - [x] 3.2.1 Criar `templates/dashboard/index.html` extendendo `base.html`
+  - [x] 3.2.2 Implementar header do dashboard: logo, campo de busca de ticker (HTMX `hx-get` para `/market_data/search/`), links "Watchlist", "Alertas", avatar do usuário com dropdown
+  - [x] 3.2.3 Implementar grid principal: `grid grid-cols-1 lg:grid-cols-12 gap-4`
+  - [x] 3.2.4 Implementar painel do gráfico (`lg:col-span-8`): container para TradingView Lightweight Charts com `id="chart-container"`, seletor de timeframe (1m, 5m, 15m, 1h, 1D)
+  - [x] 3.2.5 Implementar painel lateral (`lg:col-span-4`): card "Sinal IA" com placeholder (spinner animado), card "Dados Fundamentalistas" (condicional via Alpine.js `x-show`), card "Gestão de Risco"
+  - [x] 3.2.6 Implementar rodapé fixo: ticker de indicadores macro (SELIC, IPCA, USD/BRL) e feed de notícias horizontalmente rolável
+  - [x] 3.2.7 Criar `templates/dashboard/partials/signal_card.html` — partial HTMX para o card de sinal IA
+  - [x] 3.2.8 Criar `templates/dashboard/partials/fundamental_card.html` — partial para dados fundamentalistas
+  - [x] 3.2.9 Criar `templates/dashboard/partials/risk_card.html` — partial para gestão de risco
+  - [x] 3.2.10 Criar `templates/dashboard/partials/watchlist_sidebar.html` — partial para sidebar de watchlist
 
-- [ ] **3.3 — Integração do TradingView Lightweight Charts**
-  - [ ] 3.3.1 Adicionar script CDN do TradingView Lightweight Charts 4.x no `base.html` (bloco `extra_js`)
-  - [ ] 3.3.2 Criar `static/js/chart.js` com inicialização do `createChart()`, série de candlestick, configurações de cores (dark mode: fundo `#0A0E1A`, grid `#1F2937`, texto `#9CA3AF`)
-  - [ ] 3.3.3 Implementar função `loadChartData(ticker, timeframe)` em `chart.js` que faz fetch AJAX para `/market_data/ohlc-data/?ticker=X&timeframe=Y` e popula o gráfico
-  - [ ] 3.3.4 Conectar o campo de busca do header para chamar `loadChartData()` ao confirmar ticker
+- [x] **3.3 — Integração do TradingView Lightweight Charts**
+  - [x] 3.3.1 Adicionar script CDN do TradingView Lightweight Charts 4.x no `base.html` (bloco `extra_js`)
+  - [x] 3.3.2 Criar `static/js/chart.js` com inicialização do `createChart()`, série de candlestick, configurações de cores (dark mode: fundo `#0F1629`, grid `#1F2937`, texto `#9CA3AF`)
+  - [x] 3.3.3 Implementar função `loadChartData(ticker, timeframe)` em `chart.js` que faz fetch AJAX para `/market-data/ohlc-data/?ticker=X&timeframe=Y` e popula o gráfico
+  - [x] 3.3.4 Conectar o campo de busca do header para chamar `loadChartData()` ao confirmar ticker
 
-- [ ] **3.4 — Endpoint de Dados para o Gráfico**
-  - [ ] 3.4.1 Criar CBV `OHLCDataView(LoginRequiredMixin, View)` em `market_data/views.py` que recebe `ticker` e `timeframe` via GET, consulta `OHLCCandle` e retorna `JsonResponse` no formato `[{time, open, high, low, close}, ...]`
-  - [ ] 3.4.2 Criar `market_data/urls.py` e registrar `path('ohlc-data/', OHLCDataView.as_view(), name='ohlc_data')`
-  - [ ] 3.4.3 Incluir `path('market-data/', include('market_data.urls'))` no `urls.py` raiz
-  - [ ] 3.4.4 Criar CBV `AssetSearchView(LoginRequiredMixin, View)` em `market_data/views.py` para busca HTMX de ticker, retorna partial HTML com sugestões
+- [x] **3.4 — Endpoint de Dados para o Gráfico**
+  - [x] 3.4.1 Criar CBV `OHLCDataView(LoginRequiredMixin, View)` em `market_data/views.py` que recebe `ticker` e `timeframe` via GET, consulta `OHLCCandle` e retorna `JsonResponse` no formato `[{time, open, high, low, close}, ...]`
+  - [x] 3.4.2 Criar `market_data/urls.py` e registrar `path('ohlc-data/', OHLCDataView.as_view(), name='ohlc_data')`
+  - [x] 3.4.3 Incluir `path('market-data/', include('market_data.urls'))` no `urls.py` raiz
+  - [x] 3.4.4 Criar CBV `AssetSearchView(LoginRequiredMixin, View)` em `market_data/views.py` para busca HTMX de ticker, retorna partial HTML com sugestões
 
 ---
 

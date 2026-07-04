@@ -1,0 +1,121 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/dashboard/partials/signal_card.html
+   Tarefa 3.2.7 — Partial HTMX para o card de Sinal IA
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+<div id="signal-card"
+     class="overflow-hidden rounded-xl border border-gray-700/50 bg-[#0F1629]">
+
+  {# ── Cabeçalho do card ── #}
+  <div class="flex items-center justify-between border-b border-gray-700/40 px-4 py-3">
+    <div class="flex items-center gap-2">
+      <div class="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+        <svg class="h-3.5 w-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-300">Sinal IA</h2>
+    </div>
+    {# Badge multi-agente #}
+    <span class="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20">
+      LangGraph
+    </span>
+  </div>
+
+  {# ── Corpo do card — estado de espera (placeholder) ── #}
+  <div id="signal-body" class="px-4 py-5">
+
+    {# Estado: aguardando ativo ser selecionado #}
+    <div id="signal-waiting" class="flex flex-col items-center gap-4 py-4">
+      {# Spinner animado #}
+      <div class="relative flex h-16 w-16 items-center justify-center">
+        {# Anel externo giratório #}
+        <svg class="spin-slow absolute h-16 w-16 text-blue-500/20" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2" stroke-dasharray="44 132"/>
+        </svg>
+        {# Anel médio contra-rotação #}
+        <svg class="absolute h-12 w-12 text-cyan-500/30" style="animation: spin-slow 1.5s linear infinite reverse;" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <circle cx="32" cy="32" r="22" stroke="currentColor" stroke-width="2" stroke-dasharray="22 116"/>
+        </svg>
+        {# Ícone central #}
+        <div class="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
+          <svg class="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <p class="text-sm font-medium text-gray-300">Aguardando análise</p>
+        <p class="mt-1 text-xs text-gray-600">Busque um ativo para gerar o sinal de IA</p>
+      </div>
+
+      {# Agents em standby #}
+      <div class="w-full space-y-2">
+      {# Agents em standby — valores fixos do sistema LangGraph #}
+      <div class="flex items-center justify-between rounded-lg bg-gray-800/30 px-3 py-2">
+          <span class="text-xs text-gray-500">Agente Técnico</span>
+          <span class="flex items-center gap-1 text-[10px] text-gray-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-gray-700"></span>
+            standby
+          </span>
+        </div>
+        <div class="flex items-center justify-between rounded-lg bg-gray-800/30 px-3 py-2">
+          <span class="text-xs text-gray-500">Agente Fundamentalista</span>
+          <span class="flex items-center gap-1 text-[10px] text-gray-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-gray-700"></span>
+            standby
+          </span>
+        </div>
+        <div class="flex items-center justify-between rounded-lg bg-gray-800/30 px-3 py-2">
+          <span class="text-xs text-gray-500">Agente Macro/News</span>
+          <span class="flex items-center gap-1 text-[10px] text-gray-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-gray-700"></span>
+            standby
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {# Estado: sinal gerado — oculto por padrão, HTMX preencherá com dados reais #}
+    {# Exemplo do layout do sinal quando disponível (Sprint 6) #}
+    {% comment %}
+    Quando o sinal for gerado via HTMX na Sprint 6, este bloco será substituído:
+
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="glow-bullish h-3 w-3 rounded-full bg-emerald-400"></span>
+          <span class="text-lg font-bold text-emerald-400">BULLISH</span>
+        </div>
+        <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-bold text-emerald-400">
+          87% confiança
+        </span>
+      </div>
+      <p class="text-xs leading-relaxed text-gray-400">
+        RSI em zona de sobrevenda (32), MACD cruzamento positivo detectado.
+        Padrão de engolfo bullish confirmado no candle das 14h. SELIC estável favorece...
+      </p>
+    </div>
+    {% endcomment %}
+
+  </div>
+
+  {# ── Rodapé do card ── #}
+  <div class="border-t border-gray-700/40 px-4 py-2.5">
+    <div class="flex items-center justify-between">
+      <span class="text-[10px] text-gray-700">Atualizado: <span id="signal-timestamp">—</span></span>
+      <button id="signal-refresh-btn"
+              type="button"
+              class="flex items-center gap-1 text-[10px] text-gray-600 transition hover:text-blue-400"
+              title="Forçar nova análise">
+        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+        </svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,39 @@
+{# market_data/partials/asset_search_results.html
+   Tarefa 3.4.4 — partial HTMX retornado por AssetSearchView
+   Renderiza lista de sugestões de ativos para o campo de busca do dashboard.
+#}
+{% if assets %}
+  <ul role="listbox" class="py-1" aria-label="Sugestões de ativos">
+    {% for asset in assets %}
+    <li role="option">
+      <button
+        type="button"
+        id="suggestion-{{ asset.ticker }}"
+        onclick="selectTickerFromSearch('{{ asset.ticker }}')"
+        class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition hover:bg-white/5 focus:outline-none focus:bg-white/5"
+        aria-label="Selecionar {{ asset.ticker }} — {{ asset.name }}"
+      >
+        {# Badge de tipo #}
+        <span class="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider
+               {% if asset.asset_type == 'STOCK' %}bg-blue-500/20 text-blue-300{% else %}bg-amber-500/20 text-amber-300{% endif %}">
+          {% if asset.asset_type == 'STOCK' %}Ação{% else %}Futuro{% endif %}
+        </span>
+        {# Ticker + nome #}
+        <span class="flex flex-col min-w-0">
+          <span class="font-semibold text-white truncate">{{ asset.ticker }}</span>
+          <span class="text-xs text-gray-500 truncate">{{ asset.name }}</span>
+        </span>
+        {# Exchange badge #}
+        <span class="ml-auto flex-shrink-0 text-[10px] text-gray-600 font-mono">{{ asset.exchange }}</span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+{% elif query %}
+  <div class="flex flex-col items-center gap-2 px-3 py-4 text-center text-xs text-gray-600">
+    <svg class="h-5 w-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <span>Nenhum ativo encontrado para <strong class="text-gray-400">{{ query }}</strong></span>
+  </div>
+{% endif %}

@@ -1,0 +1,99 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/dashboard/partials/fundamental_card.html
+   Tarefa 3.2.8 — Partial para dados fundamentalistas
+   Visível apenas para ativos do tipo STOCK via Alpine.js x-show
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+<div id="fundamental-card"
+     class="overflow-hidden rounded-xl border border-gray-700/50 bg-[#0F1629]">
+
+  {# ── Cabeçalho ── #}
+  <div class="flex items-center justify-between border-b border-gray-700/40 px-4 py-3">
+    <div class="flex items-center gap-2">
+      <div class="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-amber-500/20 to-orange-500/20">
+        <svg class="h-3.5 w-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-300">Fundamentalistas</h2>
+    </div>
+    <span class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 border border-amber-500/20">
+      Fundamentus
+    </span>
+  </div>
+
+  {# ── Corpo — métricas fundamentalistas ── #}
+  <div class="px-4 py-4 space-y-3">
+
+    {# Grade de métricas 2x2 #}
+    <div class="grid grid-cols-2 gap-2">
+
+      {# P/L #}
+      <div class="rounded-lg bg-gray-800/40 px-3 py-2.5">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">P/L</p>
+        <p id="fundamental-pl" class="font-mono text-sm font-bold text-white">—</p>
+        <p class="mt-0.5 text-[10px] text-gray-600">Preço / Lucro</p>
+      </div>
+
+      {# ROE #}
+      <div class="rounded-lg bg-gray-800/40 px-3 py-2.5">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">ROE</p>
+        <p id="fundamental-roe" class="font-mono text-sm font-bold text-white">—</p>
+        <p class="mt-0.5 text-[10px] text-gray-600">Retorno s/ Patrimônio</p>
+      </div>
+
+      {# Dividend Yield #}
+      <div class="rounded-lg bg-gray-800/40 px-3 py-2.5">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">D.Y.</p>
+        <p id="fundamental-dy" class="font-mono text-sm font-bold text-emerald-400">—</p>
+        <p class="mt-0.5 text-[10px] text-gray-600">Dividend Yield</p>
+      </div>
+
+      {# EV/EBITDA #}
+      <div class="rounded-lg bg-gray-800/40 px-3 py-2.5">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">EV/EBITDA</p>
+        <p id="fundamental-ev-ebitda" class="font-mono text-sm font-bold text-white">—</p>
+        <p class="mt-0.5 text-[10px] text-gray-600">Valor Empresa</p>
+      </div>
+
+    </div>
+
+    {# Análise fundamentalista textual (Sprint 6) #}
+    <div class="rounded-lg border border-gray-700/40 bg-gray-800/20 px-3 py-2.5">
+      <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+        Análise do Agente Fundamentalista
+      </p>
+      <p id="fundamental-analysis-text"
+         class="text-xs leading-relaxed text-gray-500">
+        Selecione um ativo do tipo STOCK para ver os dados fundamentalistas coletados do Fundamentus.
+        A análise por IA estará disponível na Sprint 6.
+      </p>
+    </div>
+
+    {# Score de avaliação visual #}
+    <div>
+      <div class="mb-1.5 flex items-center justify-between">
+        <span class="text-[10px] text-gray-600">Score Fundamentalista</span>
+        <span id="fundamental-score" class="text-[10px] font-mono font-bold text-gray-500">—/100</span>
+      </div>
+      <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+        <div id="fundamental-score-bar"
+             class="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-700"
+             style="width: 0%"></div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Rodapé ── #}
+  <div class="border-t border-gray-700/40 px-4 py-2.5">
+    <span class="text-[10px] text-gray-700">
+      Fonte: Fundamentus · Atualizado: <span id="fundamental-updated-at">—</span>
+    </span>
+  </div>
+
+</div>

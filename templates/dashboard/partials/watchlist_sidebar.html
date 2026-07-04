@@ -1,0 +1,132 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/dashboard/partials/watchlist_sidebar.html
+   Tarefa 3.2.10 — Partial para sidebar de watchlist
+   Exibe os ativos da watchlist do usuário logado com ações HTMX
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+<div id="watchlist-panel"
+     class="overflow-hidden rounded-xl border border-gray-700/50 bg-[#0F1629]">
+
+  {# ── Cabeçalho ── #}
+  <div class="flex items-center justify-between border-b border-gray-700/40 px-3 py-3">
+    <div class="flex items-center gap-2">
+      <div class="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-violet-500/20 to-purple-500/20">
+        <svg class="h-3 w-3 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-300">Watchlist</h2>
+    </div>
+    {# Contador de itens #}
+    <span class="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-bold text-violet-400 border border-violet-500/20">
+      {{ watchlist|length }}
+    </span>
+  </div>
+
+  {# ── Lista de ativos ── #}
+  <div id="watchlist-items" class="py-1">
+
+    {% if watchlist %}
+      {% for item in watchlist %}
+      <div id="watchlist-item-{{ item.asset.id }}"
+           class="group flex cursor-pointer items-center gap-2 px-3 py-2.5 transition hover:bg-white/5
+                  {% if forloop.first %}border-l-2 border-blue-500 bg-blue-500/5{% endif %}"
+           role="button"
+           tabindex="0"
+           onclick="loadChartData('{{ item.asset.ticker }}', '15m')"
+           @keydown.enter="loadChartData('{{ item.asset.ticker }}', '15m')"
+           aria-label="Carregar gráfico de {{ item.asset.ticker }}">
+
+        {# Indicador de tipo de ativo #}
+        <div class="shrink-0">
+          {% if item.asset.asset_type == 'FUTURE' %}
+          <span class="flex h-6 w-6 items-center justify-center rounded-md bg-cyan-500/10 text-[9px] font-bold text-cyan-400 border border-cyan-500/20">F</span>
+          {% else %}
+          <span class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/10 text-[9px] font-bold text-blue-400 border border-blue-500/20">A</span>
+          {% endif %}
+        </div>
+
+        {# Info do ativo #}
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-xs font-bold text-white">{{ item.asset.ticker }}</p>
+          <p class="truncate text-[10px] text-gray-600">{{ item.asset.name|truncatechars:18 }}</p>
+        </div>
+
+        {# Preço placeholder (Sprint 4 preencherá via WebSocket) #}
+        <div class="shrink-0 text-right">
+          <p class="font-mono text-[10px] font-semibold text-gray-400" id="wl-price-{{ item.asset.ticker }}">—</p>
+          <p class="font-mono text-[10px]" id="wl-change-{{ item.asset.ticker }}" style="color: #6b7280;">—</p>
+        </div>
+
+        {# Botão remover (HTMX) — aparece no hover #}
+        <button
+          id="wl-remove-{{ item.asset.id }}"
+          type="button"
+          class="invisible shrink-0 flex h-5 w-5 items-center justify-center rounded text-gray-700 transition
+                 hover:bg-red-500/10 hover:text-red-400 group-hover:visible"
+          hx-post="/watchlist/remove/{{ item.asset.id }}/"
+          hx-target="#watchlist-items"
+          hx-swap="outerHTML"
+          hx-confirm="Remover {{ item.asset.ticker }} da watchlist?"
+          aria-label="Remover {{ item.asset.ticker }}">
+          <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+      </div>
+      {% endfor %}
+
+    {% else %}
+      {# Estado vazio #}
+      <div id="watchlist-empty" class="flex flex-col items-center gap-3 px-4 py-8">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-800/60 border border-gray-700/40">
+          <svg class="h-5 w-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <div class="text-center">
+          <p class="text-xs font-medium text-gray-400">Watchlist vazia</p>
+          <p class="mt-1 text-[10px] text-gray-600">Busque um ativo e adicione à watchlist</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
+  {# ── Botão adicionar ativo ── #}
+  <div class="border-t border-gray-700/40 p-3">
+    <div class="relative" x-data="{ open: false, query: '' }">
+      <input
+        id="watchlist-add-input"
+        type="text"
+        name="q"
+        placeholder="+ Adicionar ativo…"
+        autocomplete="off"
+        x-model="query"
+        @input.debounce.300ms="open = query.length >= 1"
+        @keydown.escape="open = false; query = ''"
+        @blur.window="setTimeout(() => open = false, 200)"
+        class="w-full rounded-lg border border-dashed border-gray-700/50 bg-transparent px-3 py-2
+               text-xs text-gray-500 placeholder-gray-700 transition
+               focus:border-violet-500/50 focus:outline-none focus:text-gray-300 focus:placeholder-gray-600"
+        hx-get="/market-data/search/"
+        hx-target="#watchlist-search-results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='q']"
+        aria-label="Adicionar ativo à watchlist"
+      />
+      {# Dropdown de resultados para adicionar #}
+      <div id="watchlist-search-results"
+           x-show="open"
+           x-transition:enter="transition ease-out duration-100"
+           x-transition:enter-start="opacity-0 -translate-y-1"
+           x-transition:enter-end="opacity-100 translate-y-0"
+           class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-lg border border-gray-700/50 bg-[#141B2E] shadow-xl"
+           role="listbox"></div>
+    </div>
+  </div>
+
+</div>

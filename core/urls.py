@@ -28,4 +28,7 @@ urlpatterns = [
 
     # 1.4 — Dashboard (protegido por LoginRequiredMixin)
     path('dashboard/', include('dashboard.urls')),
+
+    # 3.4.3 — Endpoints de dados de mercado (OHLC + busca de ticker)
+    path('market-data/', include('market_data.urls')),
 ]

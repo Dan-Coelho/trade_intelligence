@@ -1,25 +1,461 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard — Trade Indicator{% endblock %}
 
+{# 3.2 — Estilos extras específicos do dashboard #}
+{% block extra_head %}
+<style>
+  /* ── Scrollbar personalizado para o dashboard ── */
+  .dash-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+  .dash-scroll::-webkit-scrollbar-track { background: transparent; }
+  .dash-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 99px; }
+  .dash-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.15); }
+
+  /* ── Ticker macro animado ── */
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .marquee-track { animation: marquee 40s linear infinite; }
+  .marquee-track:hover { animation-play-state: paused; }
+
+  /* ── Spinner do sinal IA ── */
+  @keyframes spin-slow { to { transform: rotate(360deg); } }
+  .spin-slow { animation: spin-slow 2s linear infinite; }
+
+  /* ── Pulse glow nos indicadores bullish/bearish ── */
+  @keyframes glow-green {
+    0%,100% { box-shadow: 0 0 6px rgba(16,185,129,.3); }
+    50%      { box-shadow: 0 0 18px rgba(16,185,129,.6); }
+  }
+  @keyframes glow-red {
+    0%,100% { box-shadow: 0 0 6px rgba(239,68,68,.3); }
+    50%      { box-shadow: 0 0 18px rgba(239,68,68,.6); }
+  }
+  .glow-bullish { animation: glow-green 2.5s ease-in-out infinite; }
+  .glow-bearish { animation: glow-red   2.5s ease-in-out infinite; }
+
+  /* ── Transição do painel lateral ── */
+  [x-cloak] { display: none !important; }
+
+  /* ── Altura do chart container ── */
+  #chart-container { min-height: 420px; }
+
+  /* ── Rodapé fixo overlay ── */
+  #macro-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 40;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="flex items-center justify-center min-h-[70vh] px-4">
-    <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
-             style="background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.2);">
-            <span class="text-3xl">📈</span>
+{# ═══════════════════════════════════════════════════════════════
+   DASHBOARD HEADER (3.2.2)
+   Logo + busca de ticker (HTMX) + links + avatar dropdown
+   ═══════════════════════════════════════════════════════════════ #}
+<div id="dashboard-wrapper" class="flex flex-col" style="min-height: calc(100vh - 4rem - 2.75rem);">
+
+  {# ── Header interno do dashboard ── #}
+  <header id="dashboard-header"
+          class="sticky top-16 z-30 border-b border-gray-800/60 bg-[#0F1629]/95 backdrop-blur-xl">
+    <div class="mx-auto flex h-12 max-w-screen-2xl items-center gap-3 px-4 lg:px-6">
+
+      {# Busca de ticker com HTMX (3.2.2) #}
+      <div class="relative flex-1 max-w-xs"
+           x-data="{ open: false, query: '', selectedTicker: '{{ selected_ticker|default:'' }}' }">
+        <label for="dashboard-ticker-search" class="sr-only">Buscar ticker</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-gray-500">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input
+            id="dashboard-ticker-search"
+            type="text"
+            name="q"
+            placeholder="Buscar ativo… ex: PETR4"
+            autocomplete="off"
+            x-model="query"
+            @input.debounce.300ms="open = query.length >= 1"
+            @keydown.escape="open = false; query = ''"
+            @blur.window="setTimeout(() => open = false, 200)"
+            class="w-full rounded-lg border border-gray-700/50 bg-[#141B2E] py-1.5 pl-8 pr-3 text-sm text-gray-200
+                   placeholder-gray-600 transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+            hx-get="/market-data/search/"
+            hx-target="#dash-ticker-suggestions"
+            hx-trigger="keyup changed delay:300ms"
+            hx-include="[name='q']"
+            aria-autocomplete="list"
+            aria-controls="dash-ticker-suggestions"
+          />
         </div>
-        <h1 class="text-3xl font-bold text-white mb-3">
-            Bem-vindo, {{ user.email|default:"Trader" }}!
-        </h1>
-        <p class="text-slate-400 mb-8">
-            O Dashboard completo será implementado na Sprint 3.
-        </p>
-        <a href="{% url 'account_logout' %}"
-           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-slate-300
-                  border border-slate-700 hover:border-red-500 hover:text-red-400 transition-all duration-200">
-            Sair
+        {# Dropdown sugestões HTMX #}
+        <div id="dash-ticker-suggestions"
+             x-show="open"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-700/50 bg-[#141B2E] shadow-xl"
+             role="listbox"></div>
+      </div>
+
+      {# Links rápidos do dashboard (3.2.2) #}
+      <nav class="hidden items-center gap-1 md:flex" aria-label="Links do dashboard">
+        <a href="#watchlist"
+           id="dash-nav-watchlist"
+           class="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition hover:bg-white/5 hover:text-white">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          Watchlist
         </a>
+        <a href="#alertas"
+           id="dash-nav-alerts"
+           class="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition hover:bg-white/5 hover:text-white">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          Alertas
+        </a>
+        <a href="#backtest"
+           id="dash-nav-backtest"
+           class="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition hover:bg-white/5 hover:text-white">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+          </svg>
+          Backtest
+        </a>
+      </nav>
+
+      {# Avatar + ticker ativo #}
+      <div class="ml-auto flex items-center gap-3">
+        {# Ticker ativo badge #}
+        <div id="active-ticker-badge"
+             class="hidden items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300 md:flex">
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400"></span>
+          <span id="active-ticker-label">—</span>
+        </div>
+        {# Avatar usuário (3.2.2) #}
+        <div class="relative" x-data="{ open: false }">
+          <button id="dash-avatar-btn"
+                  @click="open = !open"
+                  @keydown.escape="open = false"
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-xs font-bold text-white shadow-glow transition-transform hover:scale-105"
+                  aria-label="Menu do usuário" aria-haspopup="true" :aria-expanded="open">
+            {{ user.email|slice:":1"|upper }}
+          </button>
+          <div x-show="open" @click.outside="open = false"
+               x-transition:enter="transition ease-out duration-150"
+               x-transition:enter-start="opacity-0 scale-95 translate-y-1"
+               x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+               class="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-gray-700/60 bg-[#141B2E] shadow-xl"
+               role="menu">
+            <div class="border-b border-gray-700/40 px-4 py-3">
+              <p class="truncate text-sm font-semibold text-white">{{ user.get_full_name|default:user.username }}</p>
+              <p class="truncate text-xs text-gray-500">{{ user.email }}</p>
+            </div>
+            <div class="py-1">
+              <a href="#perfil" id="dash-profile-link" role="menuitem"
+                 class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">
+                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Meu Perfil
+              </a>
+            </div>
+            <div class="border-t border-gray-700/40 py-1">
+              <form method="post" action="{% url 'account_logout' %}">
+                {% csrf_token %}
+                <button type="submit" id="dash-logout-btn" role="menuitem"
+                        class="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Sair
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+  </header>
+
+  {# ═══════════════════════════════════════════════════════════════
+     GRID PRINCIPAL (3.2.3) — 12 colunas, sidebar watchlist + conteúdo
+     ═══════════════════════════════════════════════════════════════ #}
+  <div class="mx-auto w-full max-w-screen-2xl flex-1 px-4 pb-16 pt-4 lg:px-6">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+
+      {# ── SIDEBAR WATCHLIST (col-span-2) ── #}
+      <aside id="watchlist-sidebar"
+             class="order-last lg:order-first lg:col-span-2 dash-scroll overflow-y-auto"
+             style="max-height: calc(100vh - 10rem);">
+        {% include "dashboard/partials/watchlist_sidebar.html" %}
+      </aside>
+
+      {# ═══════════════════════════════════════════════════════
+         PAINEL ESQUERDO — Gráfico (3.2.4) — col-span-7
+         ═══════════════════════════════════════════════════════ #}
+      <section id="chart-panel"
+               class="lg:col-span-7 flex flex-col gap-3"
+               aria-label="Painel do gráfico">
+
+        {# Cabeçalho do painel do gráfico #}
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {# Ticker info #}
+          <div class="flex items-center gap-2">
+            <h1 id="chart-ticker-title"
+                class="text-lg font-bold text-white tracking-tight">
+              <span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent" id="chart-ticker-name">—</span>
+            </h1>
+            <span id="chart-asset-type"
+                  class="rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              —
+            </span>
+          </div>
+
+          {# Seletor de timeframe (3.2.4) #}
+          <div id="timeframe-selector"
+               class="flex items-center gap-1 rounded-lg border border-gray-700/50 bg-[#141B2E] p-1"
+               role="group"
+               aria-label="Selecionar timeframe">
+            {% for tf in timeframes %}
+            <button
+              id="tf-btn-{{ tf }}"
+              type="button"
+              data-timeframe="{{ tf }}"
+              onclick="selectTimeframe('{{ tf }}')"
+              class="tf-btn rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition-all hover:bg-white/5 hover:text-white
+                     {% if tf == '15m' %}bg-blue-600 text-white{% endif %}"
+              aria-pressed="{% if tf == '15m' %}true{% else %}false{% endif %}">
+              {{ tf }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        {# Container do gráfico TradingView Lightweight Charts (3.2.4) #}
+        <div class="relative overflow-hidden rounded-xl border border-gray-700/50 bg-[#0F1629]">
+          {# Barra de preços ao vivo #}
+          <div class="flex items-center gap-4 border-b border-gray-700/40 px-4 py-2.5">
+            <div class="flex items-baseline gap-1.5">
+              <span id="chart-current-price"
+                    class="text-xl font-bold tabular-nums text-white font-mono">—</span>
+              <span id="chart-price-change"
+                    class="text-sm font-medium tabular-nums text-gray-500">—</span>
+            </div>
+            <div class="ml-auto flex items-center gap-4 text-xs text-gray-600 font-mono">
+              <span>O: <span id="chart-open" class="text-gray-400">—</span></span>
+              <span>H: <span id="chart-high" class="text-emerald-400">—</span></span>
+              <span>L: <span id="chart-low"  class="text-red-400">—</span></span>
+              <span>V: <span id="chart-vol"  class="text-gray-400">—</span></span>
+            </div>
+          </div>
+
+          {# Área do gráfico #}
+          <div id="chart-container"
+               class="w-full"
+               style="height: 420px;"
+               aria-label="Gráfico de candlestick">
+            {# TradingView Lightweight Charts renderiza aqui via JS #}
+            <div id="chart-placeholder"
+                 class="flex h-full items-center justify-center text-gray-600">
+              <div class="flex flex-col items-center gap-3">
+                <svg class="h-12 w-12 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                  <polyline points="16 7 22 7 22 13"/>
+                </svg>
+                <p class="text-sm">Busque um ativo para carregar o gráfico</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Sub-painéis de indicadores (RSI / MACD) — placeholder para Sprint 5 #}
+        <div class="grid grid-cols-2 gap-3">
+          <div id="rsi-mini-panel"
+               class="rounded-xl border border-gray-700/50 bg-[#0F1629] px-4 py-3">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-widest text-gray-500">RSI (14)</span>
+              <span id="rsi-value" class="font-mono text-sm font-bold text-gray-300">—</span>
+            </div>
+            <div class="h-16 flex items-center justify-center text-xs text-gray-700">
+              Indicadores na Sprint 5
+            </div>
+          </div>
+          <div id="macd-mini-panel"
+               class="rounded-xl border border-gray-700/50 bg-[#0F1629] px-4 py-3">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-widest text-gray-500">MACD (12,26,9)</span>
+              <span id="macd-value" class="font-mono text-sm font-bold text-gray-300">—</span>
+            </div>
+            <div class="h-16 flex items-center justify-center text-xs text-gray-700">
+              Indicadores na Sprint 5
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {# ═══════════════════════════════════════════════════════
+         PAINEL LATERAL DIREITO (3.2.5) — col-span-3
+         Sinal IA + Fundamentais + Gestão de Risco
+         ═══════════════════════════════════════════════════════ #}
+      <aside id="side-panel"
+             class="lg:col-span-3 flex flex-col gap-3 dash-scroll overflow-y-auto"
+             style="max-height: calc(100vh - 10rem);"
+             x-data="{ showFundamentals: false, assetType: 'FUTURE' }"
+             aria-label="Painel lateral">
+
+        {# Card Sinal IA (3.2.5) — partial HTMX #}
+        <div id="signal-card-wrapper"
+             hx-get="#"
+             hx-trigger="ticker-changed from:body"
+             hx-swap="innerHTML">
+          {% include "dashboard/partials/signal_card.html" %}
+        </div>
+
+        {# Card Dados Fundamentalistas (3.2.5) — condicional Alpine.js x-show #}
+        <div id="fundamental-card-wrapper"
+             x-show="showFundamentals && assetType === 'STOCK'"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-cloak>
+          {% include "dashboard/partials/fundamental_card.html" %}
+        </div>
+
+        {# Toggle para mostrar fundamentais (visível apenas para ações) #}
+        <button id="toggle-fundamentals-btn"
+                type="button"
+                x-show="assetType === 'STOCK'"
+                @click="showFundamentals = !showFundamentals"
+                x-cloak
+                class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-700/50
+                       py-2 text-xs font-medium text-gray-500 transition hover:border-blue-500/40 hover:text-blue-400">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span x-text="showFundamentals ? 'Ocultar Fundamentais' : 'Ver Dados Fundamentalistas'"></span>
+        </button>
+
+        {# Card Gestão de Risco (3.2.5) #}
+        <div id="risk-card-wrapper">
+          {% include "dashboard/partials/risk_card.html" %}
+        </div>
+
+      </aside>
+    </div>{# /grid #}
+  </div>{# /max-w #}
+
+</div>{# /dashboard-wrapper #}
+
+{# ═══════════════════════════════════════════════════════════════
+   RODAPÉ FIXO MACRO + NOTÍCIAS (3.2.6)
+   Ticker de SELIC, IPCA, USD/BRL + feed de notícias rolável
+   ═══════════════════════════════════════════════════════════════ #}
+<footer id="macro-footer"
+        class="border-t border-gray-800/60 bg-[#0A0E1A]/95 backdrop-blur-xl"
+        aria-label="Indicadores macroeconômicos e notícias">
+  <div class="flex h-11 items-center overflow-hidden">
+
+    {# Indicadores macro fixos à esquerda #}
+    <div class="flex shrink-0 items-center gap-4 border-r border-gray-800/60 px-4">
+      {# SELIC #}
+      <div id="macro-selic" class="flex items-center gap-1.5">
+        <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">SELIC</span>
+        <span class="font-mono text-xs font-bold text-emerald-400" id="macro-selic-value">—</span>
+      </div>
+      {# IPCA #}
+      <div id="macro-ipca" class="flex items-center gap-1.5">
+        <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">IPCA</span>
+        <span class="font-mono text-xs font-bold text-amber-400" id="macro-ipca-value">—</span>
+      </div>
+      {# USD/BRL #}
+      <div id="macro-usd" class="flex items-center gap-1.5">
+        <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">USD/BRL</span>
+        <span class="font-mono text-xs font-bold text-cyan-400" id="macro-usd-value">—</span>
+      </div>
+    </div>
+
+    {# Feed de notícias horizontalmente rolável #}
+    <div class="relative flex-1 overflow-hidden">
+      {# Gradientes fade nas bordas #}
+      <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#0A0E1A] to-transparent"></div>
+      <div class="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#0A0E1A] to-transparent"></div>
+
+      <div id="news-ticker-wrapper" class="overflow-hidden whitespace-nowrap">
+        <div class="marquee-track inline-flex items-center gap-6 px-4"
+             id="news-ticker-track"
+             aria-label="Feed de notícias">
+          {# Notícias duplicadas para loop contínuo — HTMX atualizará com dados reais #}
+          {% for i in "12345678"|make_list %}
+          <a href="#"
+             class="inline-flex items-center gap-2 text-xs text-gray-500 transition hover:text-gray-300"
+             tabindex="-1">
+            <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-700 shrink-0"></span>
+            <span>Carregando notícias do mercado…</span>
+          </a>
+          {% endfor %}
+          {# Duplicata para loop perfeito #}
+          {% for i in "12345678"|make_list %}
+          <a href="#"
+             class="inline-flex items-center gap-2 text-xs text-gray-500 transition hover:text-gray-300"
+             tabindex="-1"
+             aria-hidden="true">
+            <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-700 shrink-0"></span>
+            <span>Carregando notícias do mercado…</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Timestamp #}
+    <div class="shrink-0 border-l border-gray-800/60 px-3">
+      <span id="footer-clock" class="font-mono text-[10px] text-gray-700">—</span>
+    </div>
+  </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+{# 3.3.4 — chart.js: integração TradingView Lightweight Charts #}
+{% load static %}
+<script src="{% static 'js/chart.js' %}"></script>
+
+{# Relógio do rodapé #}
+<script>
+(function () {
+  'use strict';
+
+  /* ── Relógio em tempo real ── */
+  function updateClock() {
+    const el = document.getElementById('footer-clock');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('pt-BR', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+
+  /* ── Macro placeholders (serão preenchidos pelo backend na Sprint 4) ── */
+  // Simula valores para visualização do layout
+  const macroPlaceholders = {
+    selic: '10,50%',
+    ipca:  '4,83%',
+    usd:   'R$ 5,42',
+  };
+  const selicEl = document.getElementById('macro-selic-value');
+  const ipcaEl  = document.getElementById('macro-ipca-value');
+  const usdEl   = document.getElementById('macro-usd-value');
+  if (selicEl) selicEl.textContent = macroPlaceholders.selic;
+  if (ipcaEl)  ipcaEl.textContent  = macroPlaceholders.ipca;
+  if (usdEl)   usdEl.textContent   = macroPlaceholders.usd;
+})();
+</script>
 {% endblock %}
