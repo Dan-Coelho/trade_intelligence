@@ -174,20 +174,20 @@
 
 ### 🏃 Sprint 5 — Motor de Análise Técnica
 
-- [ ] **5.1 — Cálculo de Indicadores**
-  - [ ] 5.1.1 Criar `analysis/tasks.py` com task `run_technical_analysis(asset_id)`: busca os últimos N candles do asset, calcula RSI (período 14), MACD (12,26,9), Bollinger Bands (período 20, desvio 2) usando `pandas-ta`, persiste resultado em `TechnicalIndicator`
-  - [ ] 5.1.2 Implementar cálculo de ATR (período 14) em `analysis/utils.py` (função `calculate_atr(df)`) — resultado usado também pelo módulo de risco
-  - [ ] 5.1.3 Criar `analysis/tasks.py` — subtask `detect_candlestick_patterns(asset_id)`: usar TA-Lib para detectar padrões (`talib.CDLENGULFING`, `talib.CDLHAMMER`, etc.), persistir em `CandlestickPattern`
+- [x] **5.1 — Cálculo de Indicadores**
+  - [x] 5.1.1 Criar `analysis/tasks.py` com task `run_technical_analysis(asset_id)`: busca os últimos N candles do asset, calcula RSI (período 14), MACD (12,26,9), Bollinger Bands (período 20, desvio 2) usando `pandas-ta`, persiste resultado em `TechnicalIndicator`
+  - [x] 5.1.2 Implementar cálculo de ATR (período 14) em `analysis/utils.py` (função `calculate_atr(df)`) — resultado usado também pelo módulo de risco
+  - [x] 5.1.3 Criar `analysis/tasks.py` — subtask `detect_candlestick_patterns(asset_id)`: usar TA-Lib para detectar padrões (`talib.CDLENGULFING`, `talib.CDLHAMMER`, etc.), persistir em `CandlestickPattern`
 
-- [ ] **5.2 — Cálculo de Fibonacci**
-  - [ ] 5.2.1 Criar função `calculate_fibonacci_levels(high, low)` em `analysis/utils.py`: retorna dict com níveis 0%, 23.6%, 38.2%, 50%, 61.8%, 78.6%, 100%
-  - [ ] 5.2.2 Integrar os níveis como overlay no gráfico TradingView via `static/js/chart.js` (série de linhas horizontais)
+- [x] **5.2 — Cálculo de Fibonacci**
+  - [x] 5.2.1 Criar função `calculate_fibonacci_levels(high, low)` em `analysis/utils.py`: retorna dict com níveis 0%, 23.6%, 38.2%, 50%, 61.8%, 78.6%, 100%
+  - [x] 5.2.2 Integrar os níveis como overlay no gráfico TradingView via `static/js/chart.js` (série de linhas horizontais)
 
-- [ ] **5.3 — Endpoint de Indicadores para o Frontend**
-  - [ ] 5.3.1 Criar CBV `IndicatorDataView(LoginRequiredMixin, View)` em `analysis/views.py`: retorna `JsonResponse` com últimos valores de RSI, MACD, Bollinger para o ticker/timeframe solicitado
-  - [ ] 5.3.2 Criar `analysis/urls.py` e registrar `path('indicators/', IndicatorDataView.as_view(), name='indicators')`
-  - [ ] 5.3.3 Integrar overlay de Bollinger Bands no gráfico TradingView (série de bandas)
-  - [ ] 5.3.4 Criar sub-gráficos de RSI e MACD abaixo do candlestick principal via TradingView Lightweight Charts
+- [x] **5.3 — Endpoint de Indicadores para o Frontend**
+  - [x] 5.3.1 Criar CBV `IndicatorDataView(LoginRequiredMixin, View)` em `analysis/views.py`: retorna `JsonResponse` com últimos valores de RSI, MACD, Bollinger para o ticker/timeframe solicitado
+  - [x] 5.3.2 Criar `analysis/urls.py` e registrar `path('indicators/', IndicatorDataView.as_view(), name='indicators')`
+  - [x] 5.3.3 Integrar overlay de Bollinger Bands no gráfico TradingView (série de bandas)
+  - [x] 5.3.4 Criar sub-gráficos de RSI e MACD abaixo do candlestick principal via TradingView Lightweight Charts
 
 ---
 

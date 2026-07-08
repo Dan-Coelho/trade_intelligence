@@ -5,6 +5,9 @@
  *   3.3.2 — Inicialização do createChart() com dark mode (fundo #0A0E1A)
  *   3.3.3 — loadChartData(ticker, timeframe) com fetch AJAX para /market-data/ohlc-data/
  *   3.3.4 — Integração com busca de ticker e seletor de timeframe
+ *   5.2.2 — Overlay de Fibonacci como séries de linhas horizontais no gráfico
+ *   5.3.3 — Overlay de Bollinger Bands (série de bandas) no gráfico principal
+ *   5.3.4 — Sub-gráficos de RSI e MACD abaixo do candlestick principal
  */
 
 'use strict';
@@ -16,6 +19,38 @@ let _activeTicker = null;
 let _activeTimeframe = '15m';
 const CHART_CONTAINER_ID = 'chart-container';
 const CHART_PLACEHOLDER_ID = 'chart-placeholder';
+
+// ── Estado Fibonacci ──────────────────────────────────────────────────────────
+let _fibSeries = [];          // Array de séries de linhas do overlay Fibonacci
+let _fibVisible = false;      // Visibilidade atual do overlay
+let _fibData = null;          // Último conjunto de dados OHLC carregado (para recalcular)
+
+// Paleta de cores para cada nível Fibonacci (ordem: 0% → 100%)
+const FIB_COLORS = {
+    '0.0%':   { color: '#94A3B8', label: '0.0%'   },
+    '23.6%':  { color: '#F59E0B', label: '23.6%'  },
+    '38.2%':  { color: '#10B981', label: '38.2%'  },
+    '50.0%':  { color: '#3B82F6', label: '50.0%'  },
+    '61.8%':  { color: '#A78BFA', label: '61.8%'  },  // nível dourado
+    '78.6%':  { color: '#F97316', label: '78.6%'  },
+    '100.0%': { color: '#94A3B8', label: '100.0%' },
+};
+
+// ── Estado Bollinger Bands (5.3.3) ───────────────────────────────────────────────
+let _bbUpperSeries  = null;
+let _bbMiddleSeries = null;
+let _bbLowerSeries  = null;
+let _bbAreaSeries   = null;   // Série de área para preencher entre upper e lower
+let _bbVisible      = false;
+
+// ── Estado sub-gráficos RSI e MACD (5.3.4) ────────────────────────────────────
+let _rsiChart       = null;   // Instância de gráfico TradingView do RSI
+let _rsiSeries      = null;
+let _macdChart      = null;   // Instância de gráfico TradingView do MACD
+let _macdLineSeries = null;
+let _macdSigSeries  = null;
+let _macdHistSeries = null;
+let _subchartsReady = false;
 
 // ── Formatação de números ────────────────────────────────────────────────────
 function formatPrice(value) {
@@ -194,6 +229,9 @@ async function loadChartData(ticker, timeframe) {
         // Alimentar série de candlestick
         _candleSeries.setData(data.candles);
 
+        // Guardar dados para recálculo do Fibonacci
+        _fibData = data.candles;
+
         // Ajustar escala de tempo para mostrar os últimos dados
         _chart.timeScale().fitContent();
 
@@ -202,6 +240,14 @@ async function loadChartData(ticker, timeframe) {
 
         // Esconder placeholder
         _hidePlaceholder();
+
+        // Re-desenhar Fibonacci se estiver visível
+        if (_fibVisible) {
+            drawFibonacciLevels();
+        }
+
+        // Atualizar sub-gráficos de RSI/MACD e overlay Bollinger (5.3.3/5.3.4)
+        updateIndicatorCharts(ticker, timeframe);
 
     } catch (err) {
         console.error('[chart.js] Erro ao carregar dados:', err);
@@ -366,7 +412,499 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// ── Overlay de Fibonacci (5.2.2) ─────────────────────────────────────────────
+
+/**
+ * Calcula os níveis de retração de Fibonacci a partir do high/low dos dados.
+ *
+ * @param {number} high  - Preço máximo do range
+ * @param {number} low   - Preço mínimo do range
+ * @returns {Object}     - Dict { '0.0%': price, '23.6%': price, ... }
+ */
+function calcFibLevels(high, low) {
+    const range = high - low;
+    return {
+        '0.0%':   high,
+        '23.6%':  high - range * 0.236,
+        '38.2%':  high - range * 0.382,
+        '50.0%':  high - range * 0.500,
+        '61.8%':  high - range * 0.618,
+        '78.6%':  high - range * 0.786,
+        '100.0%': low,
+    };
+}
+
+/**
+ * Remove todos os overlays de Fibonacci ativos do gráfico.
+ */
+function clearFibonacciLevels() {
+    _fibSeries.forEach(series => {
+        try { _chart.removeSeries(series); } catch (_) {}
+    });
+    _fibSeries = [];
+
+    // Esconder painel de legenda
+    const legend = document.getElementById('fib-legend');
+    if (legend) legend.style.display = 'none';
+}
+
+/**
+ * Desenha os níveis de Fibonacci como linhas horizontais no gráfico.
+ *
+ * Calcula o high e o low dos dados OHLC atualmente carregados e plota
+ * 7 linhas horizontais coloridas com label de preço e nível percentual.
+ * As linhas são representadas como séries de linha com dois pontos
+ * (primeiro e último timestamp dos dados).
+ *
+ * @param {number|null} customHigh - High customizado (opcional, usa range total se omitido)
+ * @param {number|null} customLow  - Low customizado (opcional)
+ */
+function drawFibonacciLevels(customHigh = null, customLow = null) {
+    if (!_chart || !_candleSeries) {
+        console.warn('[Fibonacci] Gráfico não inicializado.');
+        return;
+    }
+    if (!_fibData || _fibData.length === 0) {
+        console.warn('[Fibonacci] Sem dados OHLC para calcular Fibonacci.');
+        return;
+    }
+
+    // Limpa overlays anteriores
+    clearFibonacciLevels();
+
+    // Determina high/low do range (últimos 50 candles para relevância)
+    const recentData = _fibData.slice(-50);
+    const high = customHigh ?? Math.max(...recentData.map(c => c.high ?? c.close));
+    const low  = customLow  ?? Math.min(...recentData.map(c => c.low  ?? c.close));
+
+    if (high <= low) {
+        console.warn('[Fibonacci] Range inválido: high <= low.');
+        return;
+    }
+
+    const levels = calcFibLevels(high, low);
+    const firstTime = _fibData[0].time;
+    const lastTime  = _fibData[_fibData.length - 1].time;
+
+    // Cria uma série de linha por nível
+    Object.entries(levels).forEach(([label, price]) => {
+        const meta = FIB_COLORS[label] || { color: '#6B7280' };
+
+        const lineSeries = _chart.addLineSeries({
+            color:           meta.color,
+            lineWidth:       1,
+            lineStyle:       LightweightCharts.LineStyle.Dashed,
+            priceLineVisible: false,
+            lastValueVisible: true,
+            title:           `Fib ${label}`,
+            crosshairMarkerVisible: false,
+        });
+
+        // Dois pontos definem uma linha horizontal no período visível
+        lineSeries.setData([
+            { time: firstTime, value: price },
+            { time: lastTime,  value: price },
+        ]);
+
+        _fibSeries.push(lineSeries);
+    });
+
+    _fibVisible = true;
+
+    // Atualizar estado do botão de toggle
+    _updateFibButton(true);
+
+    // Exibir legenda de Fibonacci
+    _renderFibLegend(levels);
+
+    console.info(
+        `[Fibonacci] ${Object.keys(levels).length} níveis desenhados. Range: ${formatPrice(low)} – ${formatPrice(high)}`
+    );
+}
+
+/**
+ * Alterna a visibilidade do overlay de Fibonacci.
+ * Se estiver visível, remove. Se não estiver, desenha.
+ */
+function toggleFibonacci() {
+    if (_fibVisible) {
+        clearFibonacciLevels();
+        _fibVisible = false;
+        _updateFibButton(false);
+    } else {
+        drawFibonacciLevels();
+    }
+}
+
+/** Atualiza o estilo do botão de Fibonacci no DOM. */
+function _updateFibButton(active) {
+    const btn = document.getElementById('btn-fibonacci');
+    if (!btn) return;
+    btn.classList.toggle('bg-amber-600',   active);
+    btn.classList.toggle('text-white',     active);
+    btn.classList.toggle('text-amber-400', !active);
+    btn.classList.toggle('bg-transparent', !active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.title = active ? 'Ocultar Fibonacci' : 'Exibir Fibonacci';
+}
+
+/** Renderiza a legenda de níveis Fibonacci no painel lateral. */
+function _renderFibLegend(levels) {
+    const legend = document.getElementById('fib-legend');
+    if (!legend) return;
+
+    legend.innerHTML = `
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Retração Fibonacci</p>
+        <ul class="space-y-1">
+            ${Object.entries(levels).map(([label, price]) => {
+                const meta = FIB_COLORS[label] || { color: '#6B7280' };
+                return `
+                    <li class="flex justify-between items-center text-xs">
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3 h-0.5 rounded" style="background:${meta.color}"></span>
+                            <span class="text-gray-400">${label}</span>
+                        </span>
+                        <span class="font-mono tabular-nums" style="color:${meta.color}">
+                            ${formatPrice(price)}
+                        </span>
+                    </li>
+                `;
+            }).join('')}
+        </ul>
+    `;
+    legend.style.display = 'block';
+}
+
+// ── Overlay Bollinger Bands (5.3.3) ─────────────────────────────────────────────
+
+/**
+ * Remove todas as séries de Bollinger Bands do gráfico principal.
+ */
+function clearBollingerBands() {
+    [_bbUpperSeries, _bbMiddleSeries, _bbLowerSeries, _bbAreaSeries].forEach(s => {
+        if (s) { try { _chart.removeSeries(s); } catch (_) {} }
+    });
+    _bbUpperSeries = _bbMiddleSeries = _bbLowerSeries = _bbAreaSeries = null;
+    _bbVisible = false;
+    _updateBBButton(false);
+}
+
+/**
+ * Renderiza o overlay de Bollinger Bands no gráfico de candlestick.
+ *
+ * Plota 3 séries de linha (upper, middle, lower) e uma série de área semitransparente
+ * entre upper e lower para visualizar a "banda".
+ *
+ * @param {Array} bbandsData - Array de {time, upper, middle, lower} do endpoint /analysis/indicators/
+ */
+function drawBollingerBands(bbandsData) {
+    if (!_chart) return;
+    if (!bbandsData || bbandsData.length === 0) {
+        console.warn('[BBands] Sem dados de Bollinger Bands para renderizar.');
+        return;
+    }
+
+    clearBollingerBands();
+
+    const validData = bbandsData.filter(
+        d => d.upper != null && d.middle != null && d.lower != null
+    );
+    if (validData.length === 0) return;
+
+    // Banda superior
+    _bbUpperSeries = _chart.addLineSeries({
+        color:            'rgba(59,130,246,0.7)',
+        lineWidth:        1,
+        lineStyle:        LightweightCharts.LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        title:            'BB Upper',
+        crosshairMarkerVisible: false,
+    });
+    _bbUpperSeries.setData(validData.map(d => ({ time: d.time, value: d.upper })));
+
+    // Banda média (SMA)
+    _bbMiddleSeries = _chart.addLineSeries({
+        color:            'rgba(59,130,246,0.5)',
+        lineWidth:        1,
+        lineStyle:        LightweightCharts.LineStyle.Dashed,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        title:            'BB Middle',
+        crosshairMarkerVisible: false,
+    });
+    _bbMiddleSeries.setData(validData.map(d => ({ time: d.time, value: d.middle })));
+
+    // Banda inferior
+    _bbLowerSeries = _chart.addLineSeries({
+        color:            'rgba(59,130,246,0.7)',
+        lineWidth:        1,
+        lineStyle:        LightweightCharts.LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        title:            'BB Lower',
+        crosshairMarkerVisible: false,
+    });
+    _bbLowerSeries.setData(validData.map(d => ({ time: d.time, value: d.lower })));
+
+    _bbVisible = true;
+    _updateBBButton(true);
+    console.info(`[BBands] ${validData.length} pontos de Bollinger Bands renderizados.`);
+}
+
+/** Alterna a visibilidade do overlay de Bollinger Bands. */
+function toggleBollingerBands() {
+    if (_bbVisible) {
+        clearBollingerBands();
+    } else {
+        // Busca dados e redesenha se já tiver um ticker ativo
+        if (_activeTicker) {
+            loadIndicators(_activeTicker, _activeTimeframe).then(data => {
+                if (data?.bbands) drawBollingerBands(data.bbands);
+            });
+        }
+    }
+}
+
+function _updateBBButton(active) {
+    const btn = document.getElementById('btn-bollinger');
+    if (!btn) return;
+    btn.classList.toggle('bg-blue-600',    active);
+    btn.classList.toggle('text-white',     active);
+    btn.classList.toggle('text-blue-400',  !active);
+    btn.classList.toggle('bg-transparent', !active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+}
+
+// ── Sub-gráficos RSI e MACD (5.3.4) ────────────────────────────────────────────
+
+/** Opções de layout compartilhadas entre os sub-gráficos. */
+const SUBCHART_OPTIONS = {
+    layout: {
+        background: { type: 'solid', color: '#0D1117' },
+        textColor:  '#6B7280',
+        fontSize:   10,
+        fontFamily: "'Inter', system-ui, sans-serif",
+    },
+    grid: {
+        vertLines: { color: '#161B22' },
+        horzLines: { color: '#161B22' },
+    },
+    rightPriceScale: { borderColor: '#21262D', textColor: '#6B7280' },
+    timeScale:       { borderColor: '#21262D', timeVisible: true, secondsVisible: false },
+    handleScroll:    { mouseWheel: true, pressedMouseMove: true },
+    handleScale:     { mouseWheel: true },
+    crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
+};
+
+/**
+ * Inicializa o sub-gráfico de RSI no container #rsi-chart-container.
+ * Cria o gráfico com linha de sobrecompra (70) e sobrevenda (30).
+ */
+function _initRsiChart() {
+    const container = document.getElementById('rsi-chart-container');
+    if (!container || !window.LightweightCharts) return;
+    if (_rsiChart) { _rsiChart.remove(); _rsiChart = null; }
+
+    _rsiChart = LightweightCharts.createChart(container, {
+        ...SUBCHART_OPTIONS,
+        width:  container.clientWidth || 800,
+        height: 120,
+    });
+
+    // Série principal do RSI
+    _rsiSeries = _rsiChart.addLineSeries({
+        color:            '#A78BFA',
+        lineWidth:        2,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        title:            'RSI(14)',
+    });
+
+    // Linhas de referência: sobrecompra 70 e sobrevenda 30
+    _rsiSeries.createPriceLine({ price: 70, color: '#EF4444', lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'OB' });
+    _rsiSeries.createPriceLine({ price: 30, color: '#10B981', lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'OS' });
+    _rsiSeries.createPriceLine({ price: 50, color: '#4B5563', lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dotted, axisLabelVisible: false });
+
+    // Sincroniza range de tempo com o gráfico principal
+    _chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (range && _rsiChart) _rsiChart.timeScale().setVisibleLogicalRange(range);
+    });
+
+    // Responsividade
+    window.addEventListener('resize', () => {
+        if (_rsiChart && container) _rsiChart.resize(container.clientWidth, 120);
+    });
+}
+
+/**
+ * Inicializa o sub-gráfico de MACD no container #macd-chart-container.
+ * Plota a linha MACD, linha de sinal e histograma colorido.
+ */
+function _initMacdChart() {
+    const container = document.getElementById('macd-chart-container');
+    if (!container || !window.LightweightCharts) return;
+    if (_macdChart) { _macdChart.remove(); _macdChart = null; }
+
+    _macdChart = LightweightCharts.createChart(container, {
+        ...SUBCHART_OPTIONS,
+        width:  container.clientWidth || 800,
+        height: 120,
+    });
+
+    // Linha MACD
+    _macdLineSeries = _macdChart.addLineSeries({
+        color:            '#3B82F6',
+        lineWidth:        2,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        title:            'MACD',
+    });
+
+    // Linha de sinal
+    _macdSigSeries = _macdChart.addLineSeries({
+        color:            '#F59E0B',
+        lineWidth:        1,
+        lineStyle:        LightweightCharts.LineStyle.Dashed,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        title:            'Signal',
+    });
+
+    // Histograma (barras coloridas: verde acima de zero, vermelho abaixo)
+    _macdHistSeries = _macdChart.addHistogramSeries({
+        color:            '#10B981',
+        priceLineVisible: false,
+        lastValueVisible: false,
+    });
+
+    // Sincroniza range de tempo com o gráfico principal
+    _chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (range && _macdChart) _macdChart.timeScale().setVisibleLogicalRange(range);
+    });
+
+    // Responsividade
+    window.addEventListener('resize', () => {
+        if (_macdChart && container) _macdChart.resize(container.clientWidth, 120);
+    });
+}
+
+/**
+ * Busca dados do endpoint /analysis/indicators/ e retorna o objeto JSON.
+ *
+ * @param {string} ticker    - Ticker do ativo
+ * @param {string} timeframe - Timeframe
+ * @returns {Promise<Object|null>} - Dados de indicadores ou null em caso de erro
+ */
+async function loadIndicators(ticker, timeframe) {
+    try {
+        const url = `/analysis/indicators/?ticker=${encodeURIComponent(ticker)}&timeframe=${encodeURIComponent(timeframe)}&limit=200`;
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        console.error('[Indicators] Erro ao buscar indicadores:', err);
+        return null;
+    }
+}
+
+/**
+ * Atualiza os sub-gráficos (RSI, MACD) e o overlay de Bollinger Bands
+ * com os dados buscados do endpoint /analysis/indicators/.
+ *
+ * Chamada automaticamente após loadChartData().
+ *
+ * @param {string} ticker    - Ticker do ativo
+ * @param {string} timeframe - Timeframe
+ */
+async function updateIndicatorCharts(ticker, timeframe) {
+    const data = await loadIndicators(ticker, timeframe);
+    if (!data) return;
+
+    // ── Inicializa sub-gráficos na primeira carga ─────────────────────────────
+    if (!_subchartsReady) {
+        _initRsiChart();
+        _initMacdChart();
+        _subchartsReady = true;
+    }
+
+    // ── RSI ───────────────────────────────────────────────────────────────────
+    if (_rsiSeries && data.rsi?.length) {
+        _rsiSeries.setData(
+            data.rsi
+                .filter(d => d.value != null)
+                .map(d => ({ time: d.time, value: d.value }))
+        );
+        _rsiChart?.timeScale().fitContent();
+    }
+
+    // ── MACD ──────────────────────────────────────────────────────────────────
+    if (_macdLineSeries && data.macd?.length) {
+        const validMacd = data.macd.filter(d => d.macd != null);
+
+        _macdLineSeries.setData(validMacd.map(d => ({ time: d.time, value: d.macd })));
+        _macdSigSeries?.setData(
+            validMacd.filter(d => d.signal != null).map(d => ({ time: d.time, value: d.signal }))
+        );
+        // Histograma: cor condicional por valor
+        _macdHistSeries?.setData(
+            validMacd.filter(d => d.hist != null).map(d => ({
+                time:  d.time,
+                value: d.hist,
+                color: d.hist >= 0 ? '#10B981' : '#EF4444',
+            }))
+        );
+        _macdChart?.timeScale().fitContent();
+    }
+
+    // ── Bollinger Bands (apenas se estiver visível) ───────────────────────────
+    if (_bbVisible && data.bbands?.length) {
+        drawBollingerBands(data.bbands);
+    }
+
+    // ── Atualiza snapshot no painel lateral ───────────────────────────────────
+    if (data.latest) {
+        _updateIndicatorSnapshot(data.latest);
+    }
+}
+
+/** Atualiza os elementos HTML do painel lateral com os últimos valores. */
+function _updateIndicatorSnapshot(latest) {
+    const fields = {
+        'indicator-rsi':        latest.rsi      != null ? latest.rsi.toFixed(2)      : null,
+        'indicator-macd':       latest.macd     != null ? latest.macd.toFixed(4)     : null,
+        'indicator-macd-sig':   latest.macd_signal != null ? latest.macd_signal.toFixed(4) : null,
+        'indicator-bb-upper':   latest.bb_upper != null ? formatPrice(latest.bb_upper) : null,
+        'indicator-bb-lower':   latest.bb_lower != null ? formatPrice(latest.bb_lower) : null,
+        'indicator-atr':        latest.atr      != null ? latest.atr.toFixed(4)      : null,
+    };
+    Object.entries(fields).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el && value != null) el.textContent = value;
+    });
+
+    // RSI colorido: vermelho se sobrecomprado (>70), verde se sobrevendido (<30)
+    const rsiEl = document.getElementById('indicator-rsi');
+    if (rsiEl && latest.rsi != null) {
+        rsiEl.className = latest.rsi > 70
+            ? 'font-mono text-red-400'
+            : latest.rsi < 30
+            ? 'font-mono text-emerald-400'
+            : 'font-mono text-gray-300';
+    }
+}
+
 // ── Exportar funções para uso global nos templates ───────────────────────────
-window.loadChartData = loadChartData;
-window.selectTimeframe = selectTimeframe;
+window.loadChartData          = loadChartData;
+window.selectTimeframe        = selectTimeframe;
 window.selectTickerFromSearch = selectTickerFromSearch;
+window.drawFibonacciLevels   = drawFibonacciLevels;
+window.clearFibonacciLevels  = clearFibonacciLevels;
+window.toggleFibonacci       = toggleFibonacci;
+window.drawBollingerBands    = drawBollingerBands;
+window.clearBollingerBands   = clearBollingerBands;
+window.toggleBollingerBands  = toggleBollingerBands;
+window.updateIndicatorCharts = updateIndicatorCharts;

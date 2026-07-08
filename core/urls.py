@@ -31,4 +31,7 @@ urlpatterns = [
 
     # 3.4.3 — Endpoints de dados de mercado (OHLC + busca de ticker)
     path('market-data/', include('market_data.urls')),
+
+    # 5.3.2 — Endpoints de indicadores técnicos (RSI, MACD, Bollinger, ATR)
+    path('analysis/', include('analysis.urls')),
 ]
