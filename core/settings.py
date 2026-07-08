@@ -169,3 +169,63 @@ LLM_API_KEY = config('LLM_API_KEY', default='')
 
 # Redis
 REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Celery — Configuração (Tarefas 4.1.3 e 4.1.4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 4.1.3 — Broker e result backend via Redis
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')
+
+# Fuso horário alinhado ao Django
+CELERY_TIMEZONE = 'America/Sao_Paulo'
+
+# Serialização JSON para compatibilidade e segurança
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+# Acknowledge task apenas após conclusão (evita perda de tasks em crash do worker)
+CELERY_TASK_ACKS_LATE = True
+
+# Prefetch de 1 task por worker — melhor distribuição de carga para tasks longas
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# 4.1.4 — Celery Beat Schedule: 5 tasks agendadas conforme o PRD
+from celery.schedules import crontab  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = {
+    # Task 4.2.1 — Coleta intraday OHLC (1 min, apenas em horário de pregão)
+    # Pregão B3: seg–sex 09:00–18:00 (América/São Paulo)
+    'fetch-intraday-ohlc-every-1min': {
+        'task': 'market_data.tasks.fetch_intraday_ohlc',
+        'schedule': 60,  # segundos
+        'options': {'expires': 55},  # descarta se worker estiver atrasado
+    },
+
+    # Task 4.2.2 — Coleta diária OHLC via yfinance (a cada 1h no pregão)
+    'fetch-daily-ohlc-every-1h': {
+        'task': 'market_data.tasks.fetch_daily_ohlc',
+        'schedule': crontab(minute=0, hour='9-18', day_of_week='1-5'),
+    },
+
+    # Task 4.5.1 — Dados macro BCB: SELIC e IPCA (a cada 2h)
+    'fetch-macro-data-every-2h': {
+        'task': 'news.tasks.fetch_macro_data',
+        'schedule': crontab(minute=0, hour='*/2'),
+    },
+
+    # Task 4.3.1 — Fundamentus scraping (uma vez por dia às 07:00)
+    'fetch-fundamentals-daily': {
+        'task': 'fundamentals.tasks.fetch_fundamentals',
+        'schedule': crontab(minute=0, hour=7),
+    },
+
+    # Task 4.4.1 — Coleta de notícias (uma vez por dia às 06:30)
+    'fetch-news-daily': {
+        'task': 'news.tasks.fetch_news',
+        'schedule': crontab(minute=30, hour=6),
+    },
+}

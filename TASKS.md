@@ -144,31 +144,31 @@
 
 ### 🏃 Sprint 4 — Coleta de Dados (Celery Tasks)
 
-- [ ] **4.1 — Configuração do Celery**
-  - [ ] 4.1.1 Criar `trade_intelligence/celery.py` com configuração padrão do Celery Django
-  - [ ] 4.1.2 Atualizar `trade_intelligence/__init__.py` para importar `app` do Celery
-  - [ ] 4.1.3 Configurar `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`, `CELERY_TIMEZONE` no `settings.py`
-  - [ ] 4.1.4 Configurar `CELERY_BEAT_SCHEDULE` no `settings.py` com os 5 schedules de tasks (1min, 1h, 2h, 24h, 24h)
+- [x] **4.1 — Configuração do Celery**
+  - [x] 4.1.1 Criar `core/celery.py` com configuração padrão do Celery Django
+  - [x] 4.1.2 Atualizar `core/__init__.py` para importar `app` do Celery
+  - [x] 4.1.3 Configurar `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`, `CELERY_TIMEZONE` no `settings.py`
+  - [x] 4.1.4 Configurar `CELERY_BEAT_SCHEDULE` no `settings.py` com os 5 schedules de tasks (1min, 1h, 2h, 24h, 24h)
 
-- [ ] **4.2 — Tasks de Coleta de OHLC**
-  - [ ] 4.2.1 Criar `market_data/tasks.py` com task `fetch_intraday_ohlc`: integração Brapi.dev via `httpx`, mapeamento para model `OHLCCandle`, upsert com `update_or_create`, disparo de `run_technical_analysis.delay(asset_id)` ao término
-  - [ ] 4.2.2 Criar task `fetch_daily_ohlc` em `market_data/tasks.py`: integração `yfinance`, mesma lógica de upsert, disparo de análise
-  - [ ] 4.2.3 Criar lógica de rollover de contratos em `market_data/utils.py` (função `get_active_contract(asset_type)`) para WIN e WDO
+- [x] **4.2 — Tasks de Coleta de OHLC**
+  - [x] 4.2.1 Criar `market_data/tasks.py` com task `fetch_intraday_ohlc`: integração Brapi.dev via `httpx`, mapeamento para model `OHLCCandle`, upsert com `update_or_create`, disparo de `run_technical_analysis.delay(asset_id)` ao término
+  - [x] 4.2.2 Criar task `fetch_daily_ohlc` em `market_data/tasks.py`: integração `yfinance`, mesma lógica de upsert, disparo de análise
+  - [x] 4.2.3 Criar lógica de rollover de contratos em `market_data/utils.py` (função `get_active_contract(asset_type)`) para WIN e WDO
 
-- [ ] **4.3 — Tasks de Fundamentais**
-  - [ ] 4.3.1 Criar `fundamentals/tasks.py` com task `fetch_fundamentals`: scraping do Fundamentus via `httpx` + `BeautifulSoup4`, parsing de P/L, ROE, DY, EV/EBITDA, upsert no model `FundamentalData`
-  - [ ] 4.3.2 Adicionar retry logic com `autoretry_for=(Exception,)`, `max_retries=3`, `default_retry_delay=60`
+- [x] **4.3 — Tasks de Fundamentais**
+  - [x] 4.3.1 Criar `fundamentals/tasks.py` com task `fetch_fundamentals`: scraping do Fundamentus via `httpx` + `BeautifulSoup4`, parsing de P/L, ROE, DY, EV/EBITDA, upsert no model `FundamentalData`
+  - [x] 4.3.2 Adicionar retry logic com `autoretry_for=(Exception,)`, `max_retries=3`, `default_retry_delay=60`
 
-- [ ] **4.4 — Tasks de Notícias**
-  - [ ] 4.4.1 Criar `news/tasks.py` com task `fetch_news`: tentativa de scraping Investing.com via `httpx` + User-Agent rotation; fallback para NewsAPI via `httpx`; persistir artigos em `NewsArticle`
-  - [ ] 4.4.2 Criar `news/utils.py` com função `classify_sentiment(text)` que envia o título da notícia ao LLM e retorna `BULLISH/BEARISH/NEUTRAL`
+- [x] **4.4 — Tasks de Notícias**
+  - [x] 4.4.1 Criar `news/tasks.py` com task `fetch_news`: tentativa de scraping Investing.com via `httpx` + User-Agent rotation; fallback para NewsAPI via `httpx`; persistir artigos em `NewsArticle`
+  - [x] 4.4.2 Criar `news/utils.py` com função `classify_sentiment(text)` que envia o título da notícia ao LLM e retorna `BULLISH/BEARISH/NEUTRAL`
 
-- [ ] **4.5 — Tasks de Dados Macro**
-  - [ ] 4.5.1 Criar `news/tasks.py` (ou `core/tasks.py`) com task `fetch_macro_data`: integração com API BCB (`api.bcb.gov.br/dados/serie`) para SELIC (série 432), IPCA (série 433), via `httpx`; upsert em `MacroIndicator`
+- [x] **4.5 — Tasks de Dados Macro**
+  - [x] 4.5.1 Criar `news/tasks.py` (ou `core/tasks.py`) com task `fetch_macro_data`: integração com API BCB (`api.bcb.gov.br/dados/serie`) para SELIC (série 432), IPCA (série 433), via `httpx`; upsert em `MacroIndicator`
 
-- [ ] **4.6 — Signals de Pós-Inserção**
-  - [ ] 4.6.1 Criar `market_data/signals.py` com signal `post_save` em `OHLCCandle` que dispara `analysis.tasks.run_technical_analysis.delay(instance.asset_id)` quando `created=True`
-  - [ ] 4.6.2 Criar `market_data/apps.py` e registrar o signal no `ready()` do `AppConfig`
+- [x] **4.6 — Signals de Pós-Inserção**
+  - [x] 4.6.1 Criar `market_data/signals.py` com signal `post_save` em `OHLCCandle` que dispara `analysis.tasks.run_technical_analysis.delay(instance.asset_id)` quando `created=True`
+  - [x] 4.6.2 Criar `market_data/apps.py` e registrar o signal no `ready()` do `AppConfig`
 
 ---
 
