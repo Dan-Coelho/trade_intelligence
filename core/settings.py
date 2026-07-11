@@ -172,6 +172,27 @@ REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Cache — Django cache framework com backend Redis (Tarefa 6.7.1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Usa django-redis como backend para o cache padrão do Django.
+# DB 1 para isolar do broker/result-backend do Celery (DB 0).
+_REDIS_CACHE_URL = config('REDIS_CACHE_URL', default='redis://localhost:6379/1')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': _REDIS_CACHE_URL,
+        'OPTIONS': {
+            'db': '1',
+        },
+        'KEY_PREFIX': 'trade_intel',
+        'TIMEOUT': 300,  # TTL padrão: 5 min (sobrescrito por cache.set explícito)
+    }
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Celery — Configuração (Tarefas 4.1.3 e 4.1.4)
 # ─────────────────────────────────────────────────────────────────────────────
 

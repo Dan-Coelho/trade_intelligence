@@ -193,32 +193,32 @@
 
 ### 🏃 Sprint 6 — Sistema Multi-Agente IA (LangGraph)
 
-- [ ] **6.1 — Configuração LangGraph**
-  - [ ] 6.1.1 Instalar `langgraph`, `langchain`, `langchain-google-genai` (ou `langchain-openai`) no `requirements.txt`
-  - [ ] 6.1.2 Criar `ai_agents/graph.py` com definição do `StateGraph` usando `TypedDict` para o estado compartilhado
-  - [ ] 6.1.3 Definir `AgentState` com campos: `ticker`, `asset_type`, `technical_analysis`, `fundamental_analysis`, `macro_analysis`, `signal`, `confidence`, `synthesis`
+- [x] **6.1 — Configuração LangGraph**
+  - [x] 6.1.1 Instalar `langgraph`, `langchain`, `langchain-google-genai` (ou `langchain-openai`) no `requirements.txt`
+  - [x] 6.1.2 Criar `ai_agents/graph.py` com definição do `StateGraph` usando `TypedDict` para o estado compartilhado
+  - [x] 6.1.3 Definir `AgentState` com campos: `ticker`, `asset_type`, `technical_analysis`, `fundamental_analysis`, `macro_analysis`, `signal`, `confidence`, `synthesis`
 
-- [ ] **6.2 — Technical Agent**
-  - [ ] 6.2.1 Criar `ai_agents/agents/technical_agent.py` com função `technical_node(state)`: busca `TechnicalIndicator`, `CandlestickPattern` e níveis Fibonacci do banco; formata contexto; chama LLM para gerar análise textual; retorna estado atualizado com `technical_analysis`
+- [x] **6.2 — Technical Agent**
+  - [x] 6.2.1 Criar `ai_agents/agents/technical_agent.py` com função `technical_node(state)`: busca `TechnicalIndicator`, `CandlestickPattern` e níveis Fibonacci do banco; formata contexto; chama LLM para gerar análise textual; retorna estado atualizado com `technical_analysis`
 
-- [ ] **6.3 — Fundamental Agent**
-  - [ ] 6.3.1 Criar `ai_agents/agents/fundamental_agent.py` com função `fundamental_node(state)`: executado apenas se `asset_type == 'STOCK'`; busca `FundamentalData` do banco; chama LLM para gerar análise; retorna estado atualizado com `fundamental_analysis`
+- [x] **6.3 — Fundamental Agent**
+  - [x] 6.3.1 Criar `ai_agents/agents/fundamental_agent.py` com função `fundamental_node(state)`: executado apenas se `asset_type == 'STOCK'`; busca `FundamentalData` do banco; chama LLM para gerar análise; retorna estado atualizado com `fundamental_analysis`
 
-- [ ] **6.4 — Macro/News Agent**
-  - [ ] 6.4.1 Criar `ai_agents/agents/macro_agent.py` com função `macro_node(state)`: busca `MacroIndicator` (SELIC, IPCA, PIB) e últimos `NewsArticle` com sentiment do ticker; chama LLM; retorna estado atualizado com `macro_analysis`
+- [x] **6.4 — Macro/News Agent**
+  - [x] 6.4.1 Criar `ai_agents/agents/macro_agent.py` com função `macro_node(state)`: busca `MacroIndicator` (SELIC, IPCA, PIB) e últimos `NewsArticle` com sentiment do ticker; chama LLM; retorna estado atualizado com `macro_analysis`
 
-- [ ] **6.5 — Supervisor e Synthesis**
-  - [ ] 6.5.1 Criar `ai_agents/agents/supervisor.py` com função `route_agents(state)`: decide quais nós acionar com base em `asset_type`
-  - [ ] 6.5.2 Criar `ai_agents/agents/synthesis.py` com função `synthesis_node(state)`: recebe as 3 análises, chama LLM para consolidar e emitir sinal final `BULLISH/BEARISH/NEUTRAL` com `confidence_pct` e `synthesis_text`; persiste em `AISignal`
+- [x] **6.5 — Supervisor e Synthesis**
+  - [x] 6.5.1 Criar `ai_agents/agents/supervisor.py` com função `route_agents(state)`: decide quais nós acionar com base em `asset_type`
+  - [x] 6.5.2 Criar `ai_agents/agents/synthesis.py` com função `synthesis_node(state)`: recebe as 3 análises, chama LLM para consolidar e emitir sinal final `BULLISH/BEARISH/NEUTRAL` com `confidence_pct` e `synthesis_text`; persiste em `AISignal`
 
-- [ ] **6.6 — Task Celery para Execução do Grafo**
-  - [ ] 6.6.1 Criar `ai_agents/tasks.py` com task `run_ai_analysis(asset_id)`: instancia o grafo, executa com estado inicial, persiste resultado em `AISignal`
-  - [ ] 6.6.2 Criar `ai_agents/signals.py` com signal `post_save` em `TechnicalIndicator` que dispara `run_ai_analysis.delay(instance.asset_id)` quando `created=True`
-  - [ ] 6.6.3 Registrar signal no `ai_agents/apps.py`
+- [x] **6.6 — Task Celery para Execução do Grafo**
+  - [x] 6.6.1 Criar `ai_agents/tasks.py` com task `run_ai_analysis(asset_id)`: instancia o grafo, executa com estado inicial, persiste resultado em `AISignal`
+  - [x] 6.6.2 Criar `ai_agents/signals.py` com signal `post_save` em `TechnicalIndicator` que dispara `run_ai_analysis.delay(instance.asset_id)` quando `created=True`
+  - [x] 6.6.3 Registrar signal no `ai_agents/apps.py`
 
-- [ ] **6.7 — Cache Redis para Sinais IA**
-  - [ ] 6.7.1 Configurar `django.core.cache` com backend Redis no `settings.py`
-  - [ ] 6.7.2 Na task `run_ai_analysis`, verificar cache `ai_signal_{asset_id}` antes de executar o grafo; salvar resultado no cache por 300 segundos após execução
+- [x] **6.7 — Cache Redis para Sinais IA**
+  - [x] 6.7.1 Configurar `django.core.cache` com backend Redis no `settings.py`
+  - [x] 6.7.2 Na task `run_ai_analysis`, verificar cache `ai_signal_{asset_id}` antes de executar o grafo; salvar resultado no cache por 300 segundos após execução
 
 ---
 
