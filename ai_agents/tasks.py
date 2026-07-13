@@ -5,9 +5,12 @@
 #            com estado inicial e persiste o resultado em AISignal.
 #   6.7.2 — Verifica cache `ai_signal_{asset_id}` antes de executar o grafo;
 #            salva resultado no cache por 300 segundos após execução.
+#   7.1.5 — Após persistir o sinal, publica resultado no channel group
+#            `asset_{ticker}` via channels.layers.get_channel_layer().group_send().
 
 import logging
 
+from asgiref.sync import async_to_sync
 from celery import shared_task
 from django.core.cache import cache
 
@@ -40,6 +43,7 @@ def run_ai_analysis(self, asset_id: int) -> dict:
            macro e synthesis rodam em sequência/paralelo conforme o tipo do ativo.
         6. O nó synthesis_node persiste o resultado em AISignal.
         7. Salva o resultado no cache Redis por 300 segundos.
+        8. Publica o sinal no channel group `asset_{ticker}` via Channels (7.1.5).
 
     Args:
         asset_id: PK do model Asset a analisar.
@@ -137,4 +141,64 @@ def run_ai_analysis(self, asset_id: int) -> dict:
             '[run_ai_analysis] Não foi possível salvar no cache Redis: %s', exc,
         )
 
+    # ── 6. Publicar no channel group para atualização WebSocket (7.1.5) ────────
+    # Celery workers são síncronos; usamos async_to_sync para chamar a API
+    # assíncrona do Channel Layer a partir de um contexto síncrono.
+    _publish_to_channel(ticker, signal, confidence, synthesis)
+
     return result
+
+
+def _publish_to_channel(
+    ticker: str,
+    signal: str,
+    confidence: float | None,
+    synthesis: str | None,
+) -> None:
+    """
+    Publica o sinal IA no channel group `asset_{ticker}` via Django Channels.
+
+    Todos os AssetConsumers conectados ao grupo receberão a mensagem e a
+    encaminharão via WebSocket para seus respectivos clientes.
+
+    A publicação é feita com async_to_sync para compatibilidade com o
+    contexto síncrono do worker Celery.
+
+    Args:
+        ticker:     código do ativo (ex.: PETR4).
+        signal:     sinal direcional (BULLISH | BEARISH | NEUTRAL).
+        confidence: confiança do sinal em % (0–100).
+        synthesis:  texto de síntese do sinal.
+    """
+    try:
+        from channels.layers import get_channel_layer  # noqa: PLC0415
+
+        channel_layer = get_channel_layer()
+        if channel_layer is None:
+            logger.warning(
+                '[run_ai_analysis] Channel layer não configurado — '
+                'sinal não publicado via WebSocket.'
+            )
+            return
+
+        group_name = f'asset_{ticker}'
+        message = {
+            'type':       'ai_signal',   # mapeia para AssetConsumer.ai_signal()
+            'ticker':     ticker,
+            'signal':     signal,
+            'confidence': confidence or 0,
+            'synthesis':  (synthesis or '')[:300],
+        }
+
+        async_to_sync(channel_layer.group_send)(group_name, message)
+
+        logger.debug(
+            '[run_ai_analysis] Sinal publicado no channel group %s — %s | %.1f%%',
+            group_name, signal, confidence or 0,
+        )
+    except Exception as exc:  # noqa: BLE001
+        # Falha de publicação não deve interromper o retorno da task
+        logger.error(
+            '[run_ai_analysis] Erro ao publicar no channel group asset_%s: %s',
+            ticker, exc,
+        )

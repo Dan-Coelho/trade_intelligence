@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Backtest de Estratégias — Trade Indicator{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Estilos específicos do formulário de backtest ── */
+  .bt-input {
+    @apply w-full rounded-xl border border-gray-700/50 bg-[#141B2E] px-3 py-2.5
+           text-sm text-gray-200 placeholder-gray-600
+           transition-all focus:border-blue-500/60 focus:outline-none focus:ring-1 focus:ring-blue-500/30;
+  }
+  .bt-label {
+    @apply block mb-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide;
+  }
+  .bt-error {
+    @apply mt-1 text-xs text-red-400;
+  }
+  @keyframes spin-orb {
+    to { transform: rotate(360deg); }
+  }
+  .spin-orb { animation: spin-orb 1.5s linear infinite; }
+</style>
+{% endblock %}
+
+{% block content %}
+{# ═══════════════════════════════════════════
+   PÁGINA DE BACKTEST — Formulário (7.3.5)
+   ═══════════════════════════════════════════ #}
+<div class="mx-auto max-w-screen-xl px-4 py-8 lg:px-6">
+
+  {# ── Cabeçalho ── #}
+  <div class="mb-8 flex flex-col gap-1">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl
+                  bg-gradient-to-br from-violet-600/30 to-fuchsia-600/30
+                  border border-violet-500/20">
+        <svg class="h-5 w-5 text-violet-400" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-white">Backtest de Estratégias</h1>
+        <p class="text-sm text-gray-500">Teste estratégias sobre dados históricos da B3</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+    {# ── Formulário principal (2/3) ── #}
+    <div class="lg:col-span-2"
+         x-data="backtestForm()"
+         x-cloak>
+
+      <div class="overflow-hidden rounded-2xl border border-gray-700/50 bg-[#0F1629]">
+        {# Header do card #}
+        <div class="flex items-center justify-between border-b border-gray-700/40 px-6 py-4">
+          <h2 class="text-sm font-semibold text-gray-200">Configurar Backtest</h2>
+          <span class="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5
+                       text-[10px] font-semibold text-violet-400">
+            5 estratégias disponíveis
+          </span>
+        </div>
+
+        {# Formulário #}
+        <form id="backtest-form"
+              method="post"
+              @submit.prevent="submit"
+              class="px-6 py-6 space-y-5"
+              novalidate>
+          {% csrf_token %}
+
+          {# Linha 1: Ticker #}
+          <div>
+            <label for="bt-ticker" class="bt-label">Ativo <span class="text-red-400">*</span></label>
+            <input id="bt-ticker"
+                   type="text"
+                   name="ticker"
+                   x-model="form.ticker"
+                   placeholder="Ex.: PETR4, WINM25, ITUB4"
+                   autocomplete="off"
+                   class="bt-input"
+                   :class="errors.ticker ? 'border-red-500/60 focus:border-red-500/60' : ''" />
+            <p x-show="errors.ticker" x-text="errors.ticker?.[0]" class="bt-error"></p>
+          </div>
+
+          {# Linha 2: Datas lado a lado #}
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="bt-start-date" class="bt-label">Data de Início <span class="text-red-400">*</span></label>
+              <input id="bt-start-date"
+                     type="date"
+                     name="start_date"
+                     x-model="form.start_date"
+                     class="bt-input"
+                     :class="errors.start_date ? 'border-red-500/60' : ''" />
+              <p x-show="errors.start_date" x-text="errors.start_date?.[0]" class="bt-error"></p>
+            </div>
+            <div>
+              <label for="bt-end-date" class="bt-label">Data de Fim <span class="text-red-400">*</span></label>
+              <input id="bt-end-date"
+                     type="date"
+                     name="end_date"
+                     x-model="form.end_date"
+                     class="bt-input"
+                     :class="errors.end_date ? 'border-red-500/60' : ''" />
+              <p x-show="errors.end_date" x-text="errors.end_date?.[0]" class="bt-error"></p>
+            </div>
+          </div>
+
+          {# Linha 3: Estratégia #}
+          <div>
+            <label for="bt-strategy" class="bt-label">Estratégia <span class="text-red-400">*</span></label>
+            <select id="bt-strategy"
+                    name="strategy"
+                    x-model="form.strategy"
+                    class="bt-input">
+              <option value="sma_crossover">Cruzamento de Médias (SMA 9/21)</option>
+              <option value="rsi_reversal">Reversão por RSI (sobrecomprado/sobrevendido)</option>
+              <option value="macd_signal">Sinal MACD (cruzamento linha/sinal)</option>
+              <option value="bollinger_band">Bandas de Bollinger (breakout)</option>
+              <option value="buy_and_hold">Buy &amp; Hold (benchmark)</option>
+            </select>
+          </div>
+
+          {# Linha 4: Capital inicial #}
+          <div>
+            <label for="bt-capital" class="bt-label">Capital Inicial (R$) <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500 text-sm">R$</span>
+              <input id="bt-capital"
+                     type="number"
+                     name="initial_capital"
+                     x-model="form.capital"
+                     min="1000"
+                     step="1000"
+                     placeholder="10000"
+                     class="bt-input pl-9"
+                     :class="errors.initial_capital ? 'border-red-500/60' : ''" />
+            </div>
+            <p x-show="errors.initial_capital" x-text="errors.initial_capital?.[0]" class="bt-error"></p>
+          </div>
+
+          {# Mensagem de erro global #}
+          <div x-show="globalError"
+               class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+            <p class="text-sm text-red-400" x-text="globalError"></p>
+          </div>
+
+          {# Botão submit #}
+          <div class="pt-2">
+            <button id="backtest-submit-btn"
+                    type="submit"
+                    :disabled="loading"
+                    class="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3 px-6
+                           text-sm font-semibold text-white shadow-lg
+                           transition hover:from-violet-500 hover:to-fuchsia-500
+                           disabled:cursor-not-allowed disabled:opacity-50
+                           active:scale-[0.98]">
+              <span x-show="!loading" class="flex items-center justify-center gap-2">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" aria-hidden="true">
+                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+                </svg>
+                Executar Backtest
+              </span>
+              <span x-show="loading" class="flex items-center justify-center gap-2">
+                <svg class="spin-orb h-4 w-4" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4"/>
+                </svg>
+                Processando…
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {# Card de progresso (aparece após submit) #}
+      <div x-show="taskId" x-transition
+           class="mt-4 overflow-hidden rounded-2xl border border-blue-500/20 bg-[#0F1629]">
+        <div class="flex items-center gap-3 border-b border-blue-500/10 px-6 py-4">
+          <svg class="spin-orb h-5 w-5 text-blue-400" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4"/>
+          </svg>
+          <p class="text-sm font-medium text-blue-300">Backtest em execução…</p>
+        </div>
+        <div class="px-6 py-4">
+          <p class="text-xs text-gray-500" x-text="statusMsg"></p>
+          <p class="mt-1 text-[10px] text-gray-700">
+            Task ID: <span class="font-mono" x-text="taskId"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {# ── Painel lateral — informações e histórico (1/3) ── #}
+    <aside class="space-y-4">
+      {# Card: Como funciona #}
+      <div class="rounded-2xl border border-gray-700/50 bg-[#0F1629] p-5">
+        <h3 class="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Como funciona</h3>
+        <ul class="space-y-2.5 text-xs text-gray-500">
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-violet-500/20 text-center text-[10px] font-bold text-violet-400 leading-4">1</span>
+            Configure o ativo, período, estratégia e capital inicial.
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-violet-500/20 text-center text-[10px] font-bold text-violet-400 leading-4">2</span>
+            O sistema simula trades usando dados históricos OHLC da B3.
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-violet-500/20 text-center text-[10px] font-bold text-violet-400 leading-4">3</span>
+            Métricas: Win Rate, Índice de Sharpe e Max Drawdown.
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-violet-500/20 text-center text-[10px] font-bold text-violet-400 leading-4">4</span>
+            Resultados são salvos e acessíveis posteriormente.
+          </li>
+        </ul>
+      </div>
+
+      {# Card: Aviso legal #}
+      <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
+        <div class="flex items-start gap-2">
+          <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <p class="text-xs text-amber-400/80">
+            Backtest é uma <strong>simulação histórica</strong>. Resultados passados não
+            garantem resultados futuros. Não constitui recomendação de investimento.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+{# ── Script Alpine.js do formulário ── #}
+<script>
+function backtestForm() {
+  return {
+    form: {
+      ticker:   '{{ form.ticker.value|default:'' }}',
+      start_date: '{{ form.start_date.value|default:'' }}',
+      end_date:   '{{ form.end_date.value|default:'' }}',
+      strategy:   '{{ form.strategy.value|default:'sma_crossover' }}',
+      capital:    '{{ form.initial_capital.value|default:'10000' }}',
+    },
+    loading:     false,
+    taskId:      null,
+    statusMsg:   '',
+    errors:      {},
+    globalError: '',
+
+    async submit() {
+      this.loading     = true;
+      this.errors      = {};
+      this.globalError = '';
+      this.taskId      = null;
+
+      const payload = new FormData();
+      payload.append('csrfmiddlewaretoken', this._getCsrf());
+      payload.append('ticker',          this.form.ticker);
+      payload.append('start_date',      this.form.start_date);
+      payload.append('end_date',        this.form.end_date);
+      payload.append('strategy',        this.form.strategy);
+      payload.append('initial_capital', this.form.capital);
+
+      try {
+        const res  = await fetch('/backtest/', { method: 'POST', body: payload });
+        const data = await res.json();
+
+        if (data.status === 'queued') {
+          this.taskId    = data.task_id;
+          this.statusMsg = data.message;
+          this._pollStatus(data.poll_url, data.task_id);
+        } else if (data.status === 'error') {
+          this.errors = data.errors || {};
+        }
+      } catch (e) {
+        this.globalError = 'Erro de conexão. Tente novamente.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    _pollStatus(pollUrl, taskId) {
+      const interval = setInterval(async () => {
+        try {
+          const res  = await fetch(pollUrl);
+          const data = await res.json();
+
+          if (data.status === 'success') {
+            clearInterval(interval);
+            window.location.href = data.result_url;
+          } else if (data.status === 'failure') {
+            clearInterval(interval);
+            this.globalError = 'O backtest falhou: ' + (data.error || 'erro desconhecido');
+            this.taskId = null;
+          }
+        } catch { /* ignora erros de rede — tenta na próxima iteração */ }
+      }, 2000);
+    },
+
+    _getCsrf() {
+      const m = document.cookie.match(/csrftoken=([^;]+)/);
+      return m ? m[1] : '';
+    },
+  };
+}
+</script>
+{% endblock %}

@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
 
+    # Django Channels — suporte a WebSocket / ASGI (Tarefa 7.1.1)
+    'channels',
+
     'dashboard',
     'accounts',
     'analysis',
@@ -103,6 +106,32 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Django Channels — ASGI e WebSocket (Tarefa 7.1.1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Aponta para o roteador ASGI definido em core/asgi.py
+ASGI_APPLICATION = 'core.asgi.application'
+
+# Channel Layers — backend Redis (produção) ou InMemory (desenvolvimento)
+# Em desenvolvimento (DEBUG=True), usa InMemoryChannelLayer para evitar
+# dependência de Redis local. Em produção, usa channels_redis com Redis.
+if DEBUG:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [config('REDIS_URL', default='redis://localhost:6379/0')],
+            },
+        },
+    }
 
 
 # Database
@@ -175,21 +204,29 @@ REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 # Cache — Django cache framework com backend Redis (Tarefa 6.7.1)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Usa django-redis como backend para o cache padrão do Django.
-# DB 1 para isolar do broker/result-backend do Celery (DB 0).
+# Cache — LocMem em desenvolvimento (sem Redis), Redis em produção (Tarefa 6.7.1).
 _REDIS_CACHE_URL = config('REDIS_CACHE_URL', default='redis://localhost:6379/1')
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': _REDIS_CACHE_URL,
-        'OPTIONS': {
-            'db': '1',
-        },
-        'KEY_PREFIX': 'trade_intel',
-        'TIMEOUT': 300,  # TTL padrão: 5 min (sobrescrito por cache.set explícito)
+if DEBUG:
+    # Sem dependência de Redis em dev — cache em memória do processo
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'trade-intel-dev',
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _REDIS_CACHE_URL,
+            'OPTIONS': {
+                'db': '1',
+            },
+            'KEY_PREFIX': 'trade_intel',
+            'TIMEOUT': 300,
+        }
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -248,5 +285,12 @@ CELERY_BEAT_SCHEDULE = {
     'fetch-news-daily': {
         'task': 'news.tasks.fetch_news',
         'schedule': crontab(minute=30, hour=6),
+    },
+
+    # 7.4.5 — Verifica alertas de preço a cada 1 minuto
+    'check-price-alerts-every-1min': {
+        'task': 'watchlist.tasks.check_price_alerts',
+        'schedule': 60,  # segundos
+        'options': {'expires': 55},  # descarta se worker estiver atrasado
     },
 }

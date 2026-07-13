@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Resultado do Backtest — {{ result.asset.ticker }} — Trade Indicator{% endblock %}
+
+{% block extra_head %}
+<style>
+  @keyframes count-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .metric-card { animation: count-up .4s ease forwards; }
+  .metric-card:nth-child(1) { animation-delay: .05s; }
+  .metric-card:nth-child(2) { animation-delay: .10s; }
+  .metric-card:nth-child(3) { animation-delay: .15s; }
+  .metric-card:nth-child(4) { animation-delay: .20s; }
+
+  /* Scrollbar fine */
+  .trades-scroll::-webkit-scrollbar       { width: 4px; }
+  .trades-scroll::-webkit-scrollbar-track { background: transparent; }
+  .trades-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 99px; }
+</style>
+{% endblock %}
+
+{% block content %}
+{# ═══════════════════════════════════════════
+   PÁGINA DE RESULTADO DE BACKTEST (7.3.5)
+   ═══════════════════════════════════════════ #}
+<div class="mx-auto max-w-screen-xl px-4 py-8 lg:px-6">
+
+  {# ── Breadcrumb ── #}
+  <nav class="mb-6 flex items-center gap-2 text-xs text-gray-600" aria-label="Navegação">
+    <a href="/dashboard/" class="hover:text-blue-400 transition">Dashboard</a>
+    <span>/</span>
+    <a href="/backtest/" class="hover:text-blue-400 transition">Backtest</a>
+    <span>/</span>
+    <span class="text-gray-400">Resultado #{{ result.pk }}</span>
+  </nav>
+
+  {# ── Cabeçalho do resultado ── #}
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl
+                    bg-gradient-to-br from-violet-600/30 to-fuchsia-600/30
+                    border border-violet-500/20">
+          <svg class="h-5 w-5 text-violet-400" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white">
+            {{ result.asset.ticker }}
+            <span class="text-gray-500 font-normal text-base">— {{ result.get_strategy_name_display|default:result.strategy_name }}</span>
+          </h1>
+          <p class="text-sm text-gray-500">
+            {{ result.start_date|date:"d/m/Y" }} → {{ result.end_date|date:"d/m/Y" }}
+            &middot; Capital inicial: R$ {{ result.initial_capital|floatformat:2 }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="/backtest/"
+         class="flex items-center gap-1.5 rounded-xl border border-gray-700/50 px-4 py-2
+                text-sm text-gray-400 transition hover:border-gray-600 hover:text-white">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+        </svg>
+        Novo Backtest
+      </a>
+    </div>
+  </div>
+
+  {# ── Grid principal ── #}
+  <div class="space-y-6">
+
+    {# ── 4 Cards de métricas ── #}
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+
+      {# Capital Final #}
+      <div id="bt-result-capital" class="metric-card rounded-2xl border border-gray-700/50 bg-[#0F1629] p-5">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Capital Final</p>
+        <p class="text-2xl font-bold {% if profit >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+          R$ {{ result.final_capital|floatformat:2 }}
+        </p>
+        <p class="mt-1 text-xs {% if profit >= 0 %}text-emerald-500{% else %}text-red-500{% endif %}">
+          {% if profit >= 0 %}+{% endif %}R$ {{ profit|floatformat:2 }}
+          ({% if return_pct >= 0 %}+{% endif %}{{ return_pct|floatformat:2 }}%)
+        </p>
+      </div>
+
+      {# Win Rate #}
+      <div id="bt-result-winrate" class="metric-card rounded-2xl border border-gray-700/50 bg-[#0F1629] p-5">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Win Rate</p>
+        <p class="text-2xl font-bold
+                  {% if result.win_rate >= 60 %}text-emerald-400
+                  {% elif result.win_rate >= 45 %}text-amber-400
+                  {% else %}text-red-400{% endif %}">
+          {{ result.win_rate|floatformat:1 }}%
+        </p>
+        <p class="mt-1 text-xs text-gray-600">
+          {{ winners }} ganhos / {{ losers }} perdas de {{ trades_count }} trades
+        </p>
+      </div>
+
+      {# Índice de Sharpe #}
+      <div id="bt-result-sharpe" class="metric-card rounded-2xl border border-gray-700/50 bg-[#0F1629] p-5">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Índice de Sharpe</p>
+        <p class="text-2xl font-bold
+                  {% if result.sharpe_ratio >= 1 %}text-emerald-400
+                  {% elif result.sharpe_ratio >= 0 %}text-amber-400
+                  {% else %}text-red-400{% endif %}">
+          {{ result.sharpe_ratio|floatformat:2 }}
+        </p>
+        <p class="mt-1 text-xs text-gray-600">
+          {% if result.sharpe_ratio >= 1 %}Excelente{% elif result.sharpe_ratio >= 0.5 %}Bom{% elif result.sharpe_ratio >= 0 %}Aceitável{% else %}Negativo{% endif %}
+        </p>
+      </div>
+
+      {# Max Drawdown #}
+      <div id="bt-result-drawdown" class="metric-card rounded-2xl border border-gray-700/50 bg-[#0F1629] p-5">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Max Drawdown</p>
+        <p class="text-2xl font-bold
+                  {% if result.max_drawdown <= 10 %}text-emerald-400
+                  {% elif result.max_drawdown <= 25 %}text-amber-400
+                  {% else %}text-red-400{% endif %}">
+          {{ result.max_drawdown|floatformat:2 }}%
+        </p>
+        <p class="mt-1 text-xs text-gray-600">
+          Maior queda do pico ao vale
+        </p>
+      </div>
+    </div>
+
+    {# ── Barra visual de desempenho ── #}
+    <div class="rounded-2xl border border-gray-700/50 bg-[#0F1629] p-5">
+      <h2 class="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-400">
+        Resumo de Desempenho
+      </h2>
+      <div class="space-y-3">
+        {# Win Rate bar #}
+        <div>
+          <div class="mb-1 flex justify-between text-xs">
+            <span class="text-gray-500">Win Rate</span>
+            <span class="font-semibold text-gray-300">{{ result.win_rate|floatformat:1 }}%</span>
+          </div>
+          <div class="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+            <div class="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+                 style="width: {{ result.win_rate|floatformat:0 }}%"></div>
+          </div>
+        </div>
+        {# Retorno bar #}
+        <div>
+          <div class="mb-1 flex justify-between text-xs">
+            <span class="text-gray-500">Retorno Total</span>
+            <span class="font-semibold {% if return_pct >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+              {% if return_pct >= 0 %}+{% endif %}{{ return_pct|floatformat:2 }}%
+            </span>
+          </div>
+          <div class="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+            {% with pct_clamped=return_pct|floatformat:0 %}
+            <div class="h-full rounded-full transition-all
+                        {% if return_pct >= 0 %}bg-gradient-to-r from-emerald-600 to-emerald-400
+                        {% else %}bg-gradient-to-r from-red-600 to-red-400{% endif %}"
+                 style="width: {% if return_pct >= 0 %}{{ pct_clamped }}{% else %}{{ return_pct|floatformat:0|slice:'1:' }}{% endif %}%;
+                        max-width: 100%;"></div>
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Log de trades ── #}
+    {% if result.trades_log %}
+    <div class="rounded-2xl border border-gray-700/50 bg-[#0F1629]">
+      <div class="flex items-center justify-between border-b border-gray-700/40 px-6 py-4">
+        <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-400">
+          Log de Trades ({{ trades_count }})
+        </h2>
+        <span class="text-[10px] text-gray-600">{{ winners }} wins · {{ losers }} losses</span>
+      </div>
+      <div class="trades-scroll overflow-x-auto overflow-y-auto" style="max-height: 360px;">
+        <table class="w-full text-xs" role="table" aria-label="Log de trades do backtest">
+          <thead class="sticky top-0 bg-[#0F1629]">
+            <tr class="border-b border-gray-700/40 text-gray-500 uppercase tracking-wide">
+              <th class="px-4 py-2.5 text-left font-semibold">#</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Entrada</th>
+              <th class="px-4 py-2.5 text-left font-semibold">Saída</th>
+              <th class="px-4 py-2.5 text-right font-semibold">Preço Entrada</th>
+              <th class="px-4 py-2.5 text-right font-semibold">Preço Saída</th>
+              <th class="px-4 py-2.5 text-right font-semibold">PnL (R$)</th>
+              <th class="px-4 py-2.5 text-right font-semibold">PnL (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for trade in result.trades_log %}
+            <tr class="border-b border-gray-800/40 transition hover:bg-white/[0.02]">
+              <td class="px-4 py-2.5 text-gray-600">{{ forloop.counter }}</td>
+              <td class="px-4 py-2.5 text-gray-400 font-mono">{{ trade.entry_date }}</td>
+              <td class="px-4 py-2.5 text-gray-400 font-mono">{{ trade.exit_date }}</td>
+              <td class="px-4 py-2.5 text-right text-gray-300 font-mono">{{ trade.entry_price }}</td>
+              <td class="px-4 py-2.5 text-right text-gray-300 font-mono">{{ trade.exit_price }}</td>
+              <td class="px-4 py-2.5 text-right font-semibold font-mono
+                         {% if trade.pnl >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                {% if trade.pnl >= 0 %}+{% endif %}{{ trade.pnl }}
+              </td>
+              <td class="px-4 py-2.5 text-right font-semibold font-mono
+                         {% if trade.pnl_pct >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                {% if trade.pnl_pct >= 0 %}+{% endif %}{{ trade.pnl_pct }}%
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="rounded-2xl border border-gray-700/50 bg-[#0F1629] px-6 py-10 text-center">
+      <p class="text-sm text-gray-500">Nenhum trade executado no período selecionado.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

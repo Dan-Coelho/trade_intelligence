@@ -224,43 +224,43 @@
 
 ### 🏃 Sprint 7 — WebSocket, Chat IA, Backtest e Watchlist
 
-- [ ] **7.1 — Django Channels e WebSocket**
-  - [ ] 7.1.1 Configurar `ASGI_APPLICATION` e `CHANNEL_LAYERS` com Redis no `settings.py`
-  - [ ] 7.1.2 Criar `trade_intelligence/asgi.py` com roteamento `URLRouter` para WebSocket
-  - [ ] 7.1.3 Criar `dashboard/consumers.py` com `AsyncWebsocketConsumer` `AssetConsumer`: join/leave grupo do ticker, receber e enviar mensagens de sinal IA
-  - [ ] 7.1.4 Criar `dashboard/routing.py` com `websocket_urlpatterns` mapeando `ws/asset/<ticker>/`
-  - [ ] 7.1.5 Na task `run_ai_analysis`, após persistir o sinal, publicar resultado no channel group `asset_{ticker}` via `channels.layers.get_channel_layer().group_send()`
-  - [ ] 7.1.6 Criar `static/js/websocket.js` com lógica de conexão WebSocket no frontend: ao receber mensagem, atualizar o card de sinal IA via DOM manipulation
+- [x] **7.1 — Django Channels e WebSocket**
+  - [x] 7.1.1 Configurar `ASGI_APPLICATION` e `CHANNEL_LAYERS` com Redis no `settings.py`
+  - [x] 7.1.2 Criar `trade_intelligence/asgi.py` com roteamento `URLRouter` para WebSocket
+  - [x] 7.1.3 Criar `dashboard/consumers.py` com `AsyncWebsocketConsumer` `AssetConsumer`: join/leave grupo do ticker, receber e enviar mensagens de sinal IA
+  - [x] 7.1.4 Criar `dashboard/routing.py` com `websocket_urlpatterns` mapeando `ws/asset/<ticker>/`
+  - [x] 7.1.5 Na task `run_ai_analysis`, após persistir o sinal, publicar resultado no channel group `asset_{ticker}` via `channels.layers.get_channel_layer().group_send()`
+  - [x] 7.1.6 Criar `static/js/websocket.js` com lógica de conexão WebSocket no frontend: ao receber mensagem, atualizar o card de sinal IA via DOM manipulation
 
-- [ ] **7.2 — Chat IA**
-  - [ ] 7.2.1 Criar `templates/dashboard/partials/chat_panel.html` com área de histórico de mensagens e input de texto
-  - [ ] 7.2.2 Criar CBV `ChatView(LoginRequiredMixin, View)` em `ai_agents/views.py`: recebe `ticker` e `message` via POST, monta contexto com dados do banco, chama LLM, retorna resposta via `JsonResponse`
-  - [ ] 7.2.3 Criar `ai_agents/urls.py` e registrar `path('chat/', ChatView.as_view(), name='chat')`
-  - [ ] 7.2.4 Integrar HTMX no chat: `hx-post` no formulário, `hx-swap="beforeend"` na área de histórico
+- [x] **7.2 — Chat IA**
+  - [x] 7.2.1 Criar `templates/dashboard/partials/chat_panel.html` com área de histórico de mensagens e input de texto
+  - [x] 7.2.2 Criar CBV `ChatView(LoginRequiredMixin, View)` em `ai_agents/views.py`: recebe `ticker` e `message` via POST, monta contexto com dados do banco, chama LLM, retorna resposta via `JsonResponse`
+  - [x] 7.2.3 Criar `ai_agents/urls.py` e registrar `path('chat/', ChatView.as_view(), name='chat')`
+  - [x] 7.2.4 Integrar HTMX no chat: `hx-post` no formulário, `hx-swap="beforeend"` na área de histórico
 
-- [ ] **7.3 — Backtest**
-  - [ ] 7.3.1 Criar `backtest/forms.py` com `BacktestForm(forms.Form)`: campos `ticker (CharField)`, `start_date (DateField)`, `end_date (DateField)`, `strategy (ChoiceField)`, `initial_capital (DecimalField)`; validação `clean()` verificando `start_date < end_date`
-  - [ ] 7.3.2 Criar CBV `BacktestView(LoginRequiredMixin, FormView)` em `backtest/views.py`: `form_class = BacktestForm`, `template_name = 'backtest/form.html'`; no `form_valid()`, chamar task `run_backtest.delay()`
-  - [ ] 7.3.3 Criar `backtest/tasks.py` com task `run_backtest(user_id, ticker, start_date, end_date, strategy, capital)`: busca OHLC do banco, executa `backtesting.py`, persiste resultado em `BacktestResult`
-  - [ ] 7.3.4 Criar CBV `BacktestResultView(LoginRequiredMixin, DetailView)` em `backtest/views.py`: exibe resultado com Win Rate, Sharpe, Drawdown
-  - [ ] 7.3.5 Criar `templates/backtest/form.html` e `templates/backtest/result.html` com design dark mode
-  - [ ] 7.3.6 Criar `backtest/urls.py` e registrar URLs
+- [x] **7.3 — Backtest**
+  - [x] 7.3.1 Criar `backtest/forms.py` com `BacktestForm(forms.Form)`: campos `ticker (CharField)`, `start_date (DateField)`, `end_date (DateField)`, `strategy (ChoiceField)`, `initial_capital (DecimalField)`; validação `clean()` verificando `start_date < end_date`
+  - [x] 7.3.2 Criar CBV `BacktestView(LoginRequiredMixin, FormView)` em `backtest/views.py`: `form_class = BacktestForm`, `template_name = 'backtest/form.html'`; no `form_valid()`, chamar task `run_backtest.delay()`
+  - [x] 7.3.3 Criar `backtest/tasks.py` com task `run_backtest(user_id, ticker, start_date, end_date, strategy, capital)`: busca OHLC do banco, executa `backtesting.py`, persiste resultado em `BacktestResult`
+  - [x] 7.3.4 Criar CBV `BacktestResultView(LoginRequiredMixin, DetailView)` em `backtest/views.py`: exibe resultado com Win Rate, Sharpe, Drawdown
+  - [x] 7.3.5 Criar `templates/backtest/form.html` e `templates/backtest/result.html` com design dark mode
+  - [x] 7.3.6 Criar `backtest/urls.py` e registrar URLs
 
-- [ ] **7.4 — Watchlist e Alertas**
-  - [ ] 7.4.1 Criar `watchlist/forms.py` com `PriceAlertForm(forms.ModelForm)`: campos `condition`, `target_price`; `Meta: model = PriceAlert, fields = [...]`
-  - [ ] 7.4.2 Criar CBV `WatchlistAddView(LoginRequiredMixin, View)` em `watchlist/views.py`: POST com `ticker`, cria `Watchlist` entry, retorna partial HTML atualizado (HTMX)
-  - [ ] 7.4.3 Criar CBV `WatchlistRemoveView(LoginRequiredMixin, View)` em `watchlist/views.py`: POST com `asset_id`, remove entry, retorna partial HTML
-  - [ ] 7.4.4 Criar CBV `AlertCreateView(LoginRequiredMixin, CreateView)` em `watchlist/views.py`: usa `PriceAlertForm`
-  - [ ] 7.4.5 Criar task `check_price_alerts` em `watchlist/tasks.py`: agendada a cada 1 minuto, verifica `PriceAlert.objects.filter(is_active=True)`, compara com último preço, publica notificação via Channels se condição satisfeita
-  - [ ] 7.4.6 Criar `watchlist/signals.py` com signal `post_save` em `PriceAlert` para log de auditoria
-  - [ ] 7.4.7 Criar `watchlist/urls.py` e registrar todas as URLs
-  - [ ] 7.4.8 Criar `templates/watchlist/` com templates `alert_list.html`, `alert_form.html`
+- [x] **7.4 — Watchlist e Alertas**
+  - [x] 7.4.1 Criar `watchlist/forms.py` com `PriceAlertForm(forms.ModelForm)`: campos `condition`, `target_price`; `Meta: model = PriceAlert, fields = [...]`
+  - [x] 7.4.2 Criar CBV `WatchlistAddView(LoginRequiredMixin, View)` em `watchlist/views.py`: POST com `ticker`, cria `Watchlist` entry, retorna partial HTML atualizado (HTMX)
+  - [x] 7.4.3 Criar CBV `WatchlistRemoveView(LoginRequiredMixin, View)` em `watchlist/views.py`: POST com `asset_id`, remove entry, retorna partial HTML
+  - [x] 7.4.4 Criar CBV `AlertCreateView(LoginRequiredMixin, CreateView)` em `watchlist/views.py`: usa `PriceAlertForm`
+  - [x] 7.4.5 Criar task `check_price_alerts` em `watchlist/tasks.py`: agendada a cada 1 minuto, verifica `PriceAlert.objects.filter(is_active=True)`, compara com último preço, publica notificação via Channels se condição satisfeita
+  - [x] 7.4.6 Criar `watchlist/signals.py` com signal `post_save` em `PriceAlert` para log de auditoria
+  - [x] 7.4.7 Criar `watchlist/urls.py` e registrar todas as URLs
+  - [x] 7.4.8 Criar `templates/watchlist/` com templates `alert_list.html`, `alert_form.html`
 
-- [ ] **7.5 — Gestão de Risco**
-  - [ ] 7.5.1 Criar `risk/forms.py` com `RiskForm(forms.Form)`: campo `user_capital (DecimalField)`
-  - [ ] 7.5.2 Criar CBV `RiskCalculationView(LoginRequiredMixin, FormView)` em `risk/views.py`: no `form_valid()`, busca ATR do asset via `analysis/utils.py`, calcula position sizing (Kelly simplificado: `f = (win_rate * avg_win - loss_rate * avg_loss) / avg_win`), persiste em `RiskCalculation`, retorna partial HTML (HTMX)
-  - [ ] 7.5.3 Criar `risk/urls.py` e registrar URL
-  - [ ] 7.5.4 Atualizar `templates/dashboard/partials/risk_card.html` com formulário HTMX e área de resultado
+- [x] **7.5 — Gestão de Risco**
+  - [x] 7.5.1 Criar `risk/forms.py` com `RiskForm(forms.Form)`: campo `user_capital (DecimalField)`
+  - [x] 7.5.2 Criar CBV `RiskCalculationView(LoginRequiredMixin, FormView)` em `risk/views.py`: no `form_valid()`, busca ATR do asset via `analysis/utils.py`, calcula position sizing (Kelly simplificado: `f = (win_rate * avg_win - loss_rate * avg_loss) / avg_win`), persiste em `RiskCalculation`, retorna partial HTML (HTMX)
+  - [x] 7.5.3 Criar `risk/urls.py` e registrar URL
+  - [x] 7.5.4 Atualizar `templates/dashboard/partials/risk_card.html` com formulário HTMX e área de resultado
 
 ---
 

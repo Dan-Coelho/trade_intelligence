@@ -1,0 +1,84 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/risk/partials/risk_result.html
+   Tarefa 7.5.4 — Partial HTML retornado via HTMX após cálculo de risco
+   Injetado em #risk-result no risk_card.html
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+{# ── Métricas principais ── #}
+<div class="rounded-lg bg-gray-800/30 px-3 py-2.5 space-y-2.5">
+
+  {# Stop Loss sugerido #}
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="h-2 w-2 rounded-full bg-red-500/60"></span>
+      <span class="text-xs text-gray-500">Stop Loss (ATR×2)</span>
+    </div>
+    <span class="font-mono text-xs font-bold text-red-400">
+      R$ {{ suggested_stop_loss }}
+    </span>
+  </div>
+
+  {# Position Size #}
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="h-2 w-2 rounded-full bg-blue-500/60"></span>
+      <span class="text-xs text-gray-500">Tamanho da Posição</span>
+    </div>
+    <span class="font-mono text-xs font-bold text-blue-400">
+      R$ {{ position_size }}
+    </span>
+  </div>
+
+  {# Kelly Fraction #}
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="h-2 w-2 rounded-full bg-emerald-500/60"></span>
+      <span class="text-xs text-gray-500">Kelly Fraction</span>
+    </div>
+    <span class="font-mono text-xs font-bold text-emerald-400">
+      {{ kelly_fraction|floatformat:4 }}
+    </span>
+  </div>
+
+  {# ATR atual #}
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="h-2 w-2 rounded-full bg-amber-500/60"></span>
+      <span class="text-xs text-gray-500">ATR (14)</span>
+    </div>
+    <span class="font-mono text-xs font-bold text-amber-400">
+      {{ atr_value }}
+    </span>
+  </div>
+
+</div>
+
+{# ── Risco em % do capital ── #}
+<div class="mt-2">
+  <div class="mb-1.5 flex items-center justify-between">
+    <span class="text-[10px] text-gray-600">Risco por operação</span>
+    <span class="font-mono text-[10px] font-bold text-gray-400">
+      {{ risk_pct }}% do capital
+    </span>
+  </div>
+  <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+    {# Limita a barra a 100% visualmente #}
+    {% with bar_width=risk_pct|floatformat:0 %}
+    <div id="risk-bar"
+         class="h-full rounded-full bg-gradient-to-r from-red-600 to-rose-400 transition-all duration-700"
+         style="width: {% if risk_pct > 100 %}100{% else %}{{ bar_width }}{% endif %}%">
+    </div>
+    {% endwith %}
+  </div>
+</div>
+
+{# ── Badge de sucesso ── #}
+<div class="mt-2 flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5">
+  <svg class="h-3 w-3 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span class="text-[10px] font-medium text-emerald-400">
+    Cálculo para <strong>{{ ticker }}</strong> salvo com sucesso
+  </span>
+</div>

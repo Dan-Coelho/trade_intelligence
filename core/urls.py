@@ -34,4 +34,16 @@ urlpatterns = [
 
     # 5.3.2 — Endpoints de indicadores técnicos (RSI, MACD, Bollinger, ATR)
     path('analysis/', include('analysis.urls')),
+
+    # 7.2.3 — Chat IA e endpoints do módulo ai_agents
+    path('ai/', include('ai_agents.urls', namespace='ai_agents')),
+
+    # 7.3.6 — Backtest de estratégias
+    path('backtest/', include('backtest.urls', namespace='backtest')),
+
+    # 7.4.7 — Watchlist e Alertas de preço
+    path('watchlist/', include('watchlist.urls', namespace='watchlist')),
+
+    # 7.5.3 — Gestão de Risco (position sizing + Kelly + ATR)
+    path('risk/', include('risk.urls', namespace='risk')),
 ]

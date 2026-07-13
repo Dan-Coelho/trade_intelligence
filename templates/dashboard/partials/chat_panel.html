@@ -1,0 +1,292 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/dashboard/partials/chat_panel.html
+
+   Tarefas:
+     7.2.1 — Área de histórico de mensagens e input de texto
+     7.2.4 — HTMX: hx-post no formulário, hx-swap="beforeend" no histórico
+
+   Uso no template pai:
+     {% include "dashboard/partials/chat_panel.html" with ticker=selected_ticker %}
+
+   O painel completo é auto-contido: inclui estilos, histórico e formulário.
+   A resposta do servidor (JSON) é processada pelo handler Alpine.js inline.
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+<div id="chat-panel"
+     class="flex flex-col overflow-hidden rounded-xl border border-gray-700/50 bg-[#0F1629]"
+     x-data="chatPanel('{{ ticker|default:'' }}')"
+     style="height: 100%; min-height: 420px;">
+
+  {# ── Cabeçalho ──────────────────────────────────────────────────────────── #}
+  <div class="flex items-center justify-between border-b border-gray-700/40 px-4 py-3 shrink-0">
+    <div class="flex items-center gap-2">
+      <div class="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
+        <svg class="h-3.5 w-3.5 text-violet-400" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-300">Chat IA</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {# Badge do ticker ativo #}
+      <span x-show="ticker"
+            class="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5
+                   text-[10px] font-semibold text-violet-400"
+            x-text="ticker"></span>
+      {# Indicador de digitando #}
+      <span x-show="loading"
+            class="flex items-center gap-1 text-[10px] text-gray-500">
+        <span class="flex gap-0.5">
+          <span class="h-1 w-1 animate-bounce rounded-full bg-violet-400" style="animation-delay:0ms"></span>
+          <span class="h-1 w-1 animate-bounce rounded-full bg-violet-400" style="animation-delay:150ms"></span>
+          <span class="h-1 w-1 animate-bounce rounded-full bg-violet-400" style="animation-delay:300ms"></span>
+        </span>
+        Pensando…
+      </span>
+    </div>
+  </div>
+
+  {# ── Histórico de mensagens ─────────────────────────────────────────────── #}
+  {#   7.2.1 — Área de histórico                                              #}
+  {#   7.2.4 — hx-swap="beforeend" no target #chat-history                   #}
+  <div id="chat-history"
+       x-ref="history"
+       class="flex-1 overflow-y-auto px-4 py-3 space-y-3 dash-scroll"
+       role="log"
+       aria-live="polite"
+       aria-label="Histórico do chat IA">
+
+    {# Mensagem de boas-vindas inicial #}
+    <div id="chat-welcome-msg" class="flex justify-center">
+      <p class="rounded-lg bg-gray-800/40 px-4 py-2 text-center text-xs text-gray-500">
+        👋 Pergunte sobre qualquer ativo. Ex: <em>"Qual o sinal atual do PETR4?"</em>
+      </p>
+    </div>
+
+    {# As mensagens são inseridas dinamicamente por Alpine + fetch #}
+    <template x-for="(msg, idx) in messages" :key="idx">
+      <div :class="msg.role === 'user'
+                    ? 'flex justify-end'
+                    : 'flex justify-start'">
+        <div :class="msg.role === 'user'
+                      ? 'max-w-[85%] rounded-2xl rounded-tr-sm bg-blue-600/80 px-3 py-2 text-sm text-white shadow'
+                      : 'max-w-[85%] rounded-2xl rounded-tl-sm bg-[#1A2236] border border-gray-700/40 px-3 py-2 text-sm text-gray-200 shadow'"
+             style="animation: fadeInMsg .25s ease forwards">
+          {# Avatar IA #}
+          <template x-if="msg.role === 'ai'">
+            <div class="mb-1 flex items-center gap-1.5">
+              <div class="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500">
+                <svg class="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/>
+                  <circle cx="9" cy="10" r="1.5"/><circle cx="15" cy="10" r="1.5"/>
+                  <path d="M8.5 15s1.5 2 3.5 2 3.5-2 3.5-2"/>
+                </svg>
+              </div>
+              <span class="text-[10px] font-semibold text-violet-400">IA</span>
+            </div>
+          </template>
+          <p class="leading-relaxed whitespace-pre-wrap" x-text="msg.text"></p>
+          <p class="mt-1 text-[9px] opacity-40" x-text="msg.time"></p>
+        </div>
+      </div>
+    </template>
+
+    {# Skeleton de carregamento #}
+    <div x-show="loading" class="flex justify-start">
+      <div class="max-w-[75%] rounded-2xl rounded-tl-sm bg-[#1A2236] border border-gray-700/40 px-3 py-2 shadow">
+        <div class="flex gap-1.5 items-center py-1">
+          <div class="h-2 w-16 rounded bg-gray-700/60 animate-pulse"></div>
+          <div class="h-2 w-10 rounded bg-gray-700/40 animate-pulse"></div>
+        </div>
+        <div class="mt-1.5 h-2 w-24 rounded bg-gray-700/30 animate-pulse"></div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Formulário de input ────────────────────────────────────────────────── #}
+  {#   7.2.4 — hx-post no formulário (usamos @submit.prevent + fetch Alpine   #}
+  {#           para controle fino do loading state e animação de mensagens)   #}
+  <div class="border-t border-gray-700/40 px-4 py-3 shrink-0">
+    <form id="chat-form"
+          @submit.prevent="sendMessage"
+          class="flex items-end gap-2">
+
+      {# Campo de ticker oculto — enviado junto com a mensagem #}
+      <input type="hidden" name="ticker" :value="ticker" />
+
+      {# Textarea expandível #}
+      <div class="relative flex-1">
+        <label for="chat-input" class="sr-only">Mensagem</label>
+        <textarea
+          id="chat-input"
+          name="message"
+          x-model="inputText"
+          @keydown.enter.prevent="!$event.shiftKey && sendMessage()"
+          :disabled="loading || !ticker"
+          placeholder="Pergunte sobre {{ ticker|default:'o ativo selecionado' }}… (Enter para enviar)"
+          rows="1"
+          class="w-full resize-none rounded-xl border border-gray-700/50 bg-[#141B2E] px-3 py-2.5
+                 text-sm text-gray-200 placeholder-gray-600 transition-all
+                 focus:border-violet-500/60 focus:outline-none focus:ring-1 focus:ring-violet-500/30
+                 disabled:cursor-not-allowed disabled:opacity-40"
+          style="max-height: 120px; overflow-y: auto;"
+          @input="autoResize($el)"
+        ></textarea>
+      </div>
+
+      {# Botão enviar #}
+      <button
+        id="chat-send-btn"
+        type="submit"
+        :disabled="loading || !inputText.trim() || !ticker"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl
+               bg-gradient-to-br from-violet-600 to-fuchsia-600
+               text-white shadow transition
+               hover:from-violet-500 hover:to-fuchsia-500
+               disabled:cursor-not-allowed disabled:opacity-40
+               active:scale-95"
+        aria-label="Enviar mensagem">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+
+    {# Atalho de teclado #}
+    <p class="mt-1.5 text-[10px] text-gray-700 select-none">
+      Enter para enviar &middot; Shift+Enter para nova linha
+    </p>
+  </div>
+</div>
+
+{# ── Estilos locais do chat ───────────────────────────────────────────────── #}
+<style>
+  @keyframes fadeInMsg {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar personalizado — alinhado ao padrão do dashboard */
+  #chat-history::-webkit-scrollbar       { width: 4px; }
+  #chat-history::-webkit-scrollbar-track { background: transparent; }
+  #chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 99px; }
+  #chat-history::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.15); }
+</style>
+
+{# ── Script Alpine.js do chat ─────────────────────────────────────────────── #}
+<script>
+/**
+ * chatPanel(ticker) — componente Alpine.js do painel de chat IA.
+ *
+ * Responsabilidades:
+ *   - Manter histórico de mensagens (array `messages`).
+ *   - Enviar mensagem via fetch (JSON) para /ai/chat/.
+ *   - Exibir loading state (dots animados + skeleton).
+ *   - Auto-scroll para a última mensagem.
+ *   - Auto-resize do textarea.
+ *   - Obter CSRF token do cookie do Django.
+ *
+ * Tarefa 7.2.4 — HTMX/Alpine integration:
+ *   O formulário usa @submit.prevent do Alpine em vez de hx-post direto,
+ *   permitindo controle fino do estado de loading e da lista de mensagens.
+ *   A URL do endpoint segue o padrão definido em 7.2.3 (/ai/chat/).
+ */
+function chatPanel(initialTicker) {
+  return {
+    ticker:    initialTicker || '',
+    messages:  [],
+    inputText: '',
+    loading:   false,
+
+    init() {
+      // Escuta evento global para atualizar o ticker quando o usuário muda de ativo
+      window.addEventListener('ticker-changed', (e) => {
+        this.ticker = (e.detail && e.detail.ticker) ? e.detail.ticker : this.ticker;
+      });
+    },
+
+    /**
+     * Envia a mensagem do usuário ao endpoint /ai/chat/ e exibe a resposta.
+     */
+    async sendMessage() {
+      const text = this.inputText.trim();
+      if (!text || !this.ticker || this.loading) return;
+
+      // Oculta mensagem de boas-vindas
+      const welcome = document.getElementById('chat-welcome-msg');
+      if (welcome) welcome.style.display = 'none';
+
+      // Adiciona mensagem do usuário
+      this._pushMessage('user', text);
+      this.inputText = '';
+      this.loading   = true;
+      this._scrollToBottom();
+
+      try {
+        const response = await fetch('/ai/chat/', {
+          method:  'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken':  this._getCsrf(),
+          },
+          body: JSON.stringify({ ticker: this.ticker, message: text }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        this._pushMessage('ai', data.reply || 'Sem resposta.');
+      } catch (err) {
+        console.error('[Chat] Erro:', err);
+        this._pushMessage('ai', 'Erro ao contatar o assistente. Tente novamente.');
+      } finally {
+        this.loading = false;
+        this.$nextTick(() => this._scrollToBottom());
+      }
+    },
+
+    /**
+     * Adiciona mensagem ao array e força scroll.
+     * @param {'user'|'ai'} role
+     * @param {string} text
+     */
+    _pushMessage(role, text) {
+      const now = new Date();
+      this.messages.push({
+        role,
+        text,
+        time: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      });
+      this.$nextTick(() => this._scrollToBottom());
+    },
+
+    /**
+     * Faz scroll do histórico até a última mensagem.
+     */
+    _scrollToBottom() {
+      const el = this.$refs.history;
+      if (el) el.scrollTop = el.scrollHeight;
+    },
+
+    /**
+     * Auto-resize do textarea conforme o conteúdo cresce.
+     * @param {HTMLTextAreaElement} el
+     */
+    autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    },
+
+    /**
+     * Obtém o CSRF token do cookie do Django.
+     * @returns {string}
+     */
+    _getCsrf() {
+      const m = document.cookie.match(/csrftoken=([^;]+)/);
+      return m ? m[1] : '';
+    },
+  };
+}
+</script>

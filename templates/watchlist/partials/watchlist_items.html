@@ -1,0 +1,76 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/watchlist/partials/watchlist_items.html
+   Partial HTMX retornado pelos endpoints WatchlistAddView e WatchlistRemoveView.
+   Substitui apenas o conteúdo da lista #watchlist-items na sidebar.
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+<div id="watchlist-items" class="py-1">
+
+  {% if watchlist %}
+    {% for item in watchlist %}
+    <div id="watchlist-item-{{ item.asset.id }}"
+         class="group flex cursor-pointer items-center gap-2 px-3 py-2.5 transition hover:bg-white/5
+                {% if forloop.first %}border-l-2 border-blue-500 bg-blue-500/5{% endif %}"
+         role="button"
+         tabindex="0"
+         onclick="loadChartData('{{ item.asset.ticker }}', '15m')"
+         @keydown.enter="loadChartData('{{ item.asset.ticker }}', '15m')"
+         aria-label="Carregar gráfico de {{ item.asset.ticker }}">
+
+      {# Indicador de tipo de ativo #}
+      <div class="shrink-0">
+        {% if item.asset.asset_type == 'FUTURE' %}
+        <span class="flex h-6 w-6 items-center justify-center rounded-md bg-cyan-500/10 text-[9px] font-bold text-cyan-400 border border-cyan-500/20">F</span>
+        {% else %}
+        <span class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/10 text-[9px] font-bold text-blue-400 border border-blue-500/20">A</span>
+        {% endif %}
+      </div>
+
+      {# Info do ativo #}
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-xs font-bold text-white">{{ item.asset.ticker }}</p>
+        <p class="truncate text-[10px] text-gray-600">{{ item.asset.name|truncatechars:18 }}</p>
+      </div>
+
+      {# Preço em tempo real #}
+      <div class="shrink-0 text-right">
+        <p class="font-mono text-[10px] font-semibold text-gray-400" id="wl-price-{{ item.asset.ticker }}">—</p>
+        <p class="font-mono text-[10px]" id="wl-change-{{ item.asset.ticker }}" style="color: #6b7280;">—</p>
+      </div>
+
+      {# Botão remover (HTMX) — aparece no hover #}
+      <button
+        id="wl-remove-{{ item.asset.id }}"
+        type="button"
+        class="invisible shrink-0 flex h-5 w-5 items-center justify-center rounded text-gray-700 transition
+               hover:bg-red-500/10 hover:text-red-400 group-hover:visible"
+        hx-post="/watchlist/remove/{{ item.asset.id }}/"
+        hx-target="#watchlist-items"
+        hx-swap="outerHTML"
+        hx-confirm="Remover {{ item.asset.ticker }} da watchlist?"
+        aria-label="Remover {{ item.asset.ticker }}">
+        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+
+    </div>
+    {% endfor %}
+
+  {% else %}
+    {# Estado vazio #}
+    <div id="watchlist-empty" class="flex flex-col items-center gap-3 px-4 py-8">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-800/60 border border-gray-700/40">
+        <svg class="h-5 w-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <div class="text-center">
+        <p class="text-xs font-medium text-gray-400">Watchlist vazia</p>
+        <p class="mt-1 text-[10px] text-gray-600">Busque um ativo e adicione à watchlist</p>
+      </div>
+    </div>
+  {% endif %}
+
+</div>

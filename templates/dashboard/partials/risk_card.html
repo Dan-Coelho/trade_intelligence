@@ -1,7 +1,8 @@
 {# ═══════════════════════════════════════════════════════════════════════
    templates/dashboard/partials/risk_card.html
-   Tarefa 3.2.9 — Partial para gestão de risco
+   Tarefa 3.2.9 / 7.5.4 — Partial para gestão de risco
    Formulário HTMX + resultado de position sizing / stop loss (ATR)
+   Atualizado na Sprint 7.5: URL nomeada, campos Kelly, partials de resultado
    ═══════════════════════════════════════════════════════════════════════ #}
 
 <div id="risk-card"
@@ -28,14 +29,22 @@
   <div class="px-4 py-4 space-y-4">
 
     {# Input de capital #}
+    {# ── Formulário HTMX — envia para RiskCalculationView (7.5.2) ── #}
     <form id="risk-form"
-          hx-post="/risk/calculate/"
+          hx-post="{% url 'risk:calculate' %}"
           hx-target="#risk-result"
           hx-swap="innerHTML"
           hx-indicator="#risk-loading"
           class="space-y-3">
       {% csrf_token %}
+
+      {# Campo oculto preenchido pelo JS do dashboard quando o usuário seleciona um ativo #}
       <input type="hidden" name="ticker" id="risk-ticker-input" value="">
+
+      {# Campos ocultos para Kelly simplificado — valores padrão editáveis via JS #}
+      <input type="hidden" name="win_rate" id="risk-win-rate-input" value="55">
+      <input type="hidden" name="avg_win"  id="risk-avg-win-input"  value="200">
+      <input type="hidden" name="avg_loss" id="risk-avg-loss-input" value="100">
 
       <div>
         <label for="risk-capital" class="mb-1.5 block text-xs font-medium text-gray-400">
@@ -48,7 +57,7 @@
             name="user_capital"
             type="number"
             step="100"
-            min="0"
+            min="1"
             placeholder="10.000,00"
             class="w-full rounded-lg border border-gray-700/50 bg-[#141B2E] py-2 pl-8 pr-3 text-sm font-mono
                    text-gray-200 placeholder-gray-700 transition focus:border-red-500/50 focus:outline-none focus:ring-1 focus:ring-red-500/30"

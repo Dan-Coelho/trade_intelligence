@@ -1,0 +1,20 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   templates/risk/partials/risk_error.html
+   Tarefa 7.5.4 — Partial de erro HTMX para o RiskCalculationView
+   Injetado em #risk-result quando ocorre um erro no cálculo
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+<div class="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 space-y-1.5">
+  <div class="flex items-center gap-1.5">
+    <svg class="h-3.5 w-3.5 text-red-400 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span class="text-xs font-semibold text-red-400">Erro no cálculo</span>
+  </div>
+  <p class="text-[11px] leading-relaxed text-red-300/80">
+    {{ error_message }}
+  </p>
+</div>
